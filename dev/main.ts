@@ -1,4 +1,4 @@
-/// <reference path="game.ts" />
+/// <reference path="classes/game.ts" />
 
 window.addEventListener("load", function() {
     new Game();
