@@ -1,0 +1,4 @@
+class Knightsalot extends GameObject
+{
+    
+}
