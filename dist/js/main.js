@@ -186,17 +186,26 @@ class SpriteObject extends GameObject {
     }
 }
 class TextObject extends GameObject {
-    constructor(position, width, height, text, size) {
+    constructor(position, width, height, text, size, r, g, b, a = 1) {
         super(position, width, height);
+        this.color = [4];
         this.text = text;
         this.size = size;
+        this.color[0] = r;
+        this.color[1] = g;
+        this.color[2] = b;
+        this.color[3] = a;
+        this.cacheColorString();
     }
     update() {
     }
     draw(ctx) {
-        ctx.fillStyle = "rgba(0, 0, 0, 100)";
+        ctx.fillStyle = this.textColor;
         ctx.font = this.size + "px Arial";
         ctx.fillText(this.text, this.position.x, this.position.y, this.width);
+    }
+    cacheColorString() {
+        this.textColor = "rgba(" + this.color[0] + "," + this.color[1] + "," + this.color[2] + "," + this.color[3] + ")";
     }
 }
 class Vector2 {
@@ -261,8 +270,8 @@ class Puss extends SpriteObject {
 class SplashScene extends Scene {
     init() {
         super.init();
-        this.gameObjects.push(new TextObject(new Vector2(window.innerWidth / 2, 100), 400, 50, "Welcome to zha jungle, ya!", 36));
-        this.gameObjects.push(new FadeText(new Vector2(window.innerWidth / 2, window.innerHeight - 200), 600, 50, "Druk op een toets om door te gaan!", 36, 0.25, 1.0, 5));
+        this.gameObjects.push(new TextObject(new Vector2(window.innerWidth / 2, 100), 400, 50, "Welcome to zha jungle, ya!", 36, 100, 0, 0));
+        this.gameObjects.push(new FadeText(new Vector2(window.innerWidth / 2, window.innerHeight - 200), 600, 50, "Druk op een toets om door te gaan!", 36, 0, 100, 0, 0.25, 1.0, 5));
         this.gameObjects.push(new Puss(new Vector2(window.innerWidth / 2, window.innerHeight / 2 + 100), 100, 250, 5));
     }
     update() {
@@ -273,32 +282,30 @@ class SplashScene extends Scene {
     }
 }
 class FadeText extends TextObject {
-    constructor(position, width, height, text, size, low, high, duration) {
-        super(position, width, height, text, size);
+    constructor(position, width, height, text, size, r, g, b, low, high, duration) {
+        super(position, width, height, text, size, r, g, b);
         this.lowAlpha = low;
         this.highAlpha = high;
         this.duration = duration;
-        this.alpha = 1.0;
         this.revert = false;
     }
     update() {
     }
     draw(ctx) {
         if (!this.revert) {
-            if (this.alpha > this.lowAlpha)
-                this.alpha -= .005;
+            if (this.color[3] > this.lowAlpha)
+                this.color[3] -= .005;
             else
                 this.revert = true;
         }
         else {
-            if (this.alpha <= this.highAlpha)
-                this.alpha += .01;
+            if (this.color[3] <= this.highAlpha)
+                this.color[3] += .01;
             else
                 this.revert = false;
         }
-        ctx.fillStyle = "rgba(0, 0, 0, " + this.alpha + ")";
-        ctx.font = this.size + "px Arial";
-        ctx.fillText(this.text, this.position.x, this.position.y, this.width);
+        this.cacheColorString();
+        super.draw(ctx);
     }
 }
 //# sourceMappingURL=main.js.map
