@@ -111,7 +111,7 @@ class Battleship {
         if (this.currentFrame > 3) {
             this.currentFrame = 0;
         }
-        
+         
         this.context.drawImage(
             this.image,
             this.currentFrame * this.frameWidth,
