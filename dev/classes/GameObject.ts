@@ -7,6 +7,7 @@ class GameObject
     public height:number;
     public needsInput:Boolean;
     
+    
     constructor(position:Vector2, width:number, height:number, needsInput:Boolean = false)
     {
         this.width = width;
@@ -16,6 +17,7 @@ class GameObject
         this.position = position;
         this.needsInput = needsInput;
         this.direction = Vector2.zero;
+        
     }
     
     public update()

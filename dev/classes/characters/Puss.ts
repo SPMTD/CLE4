@@ -2,8 +2,9 @@ class Puss extends SpriteObject
 {
     constructor(position:Vector2, width:number, height:number, speed:number)
     {
-        super(position, width, height, 'cat', true);
+        super(position, width, height, 'spriteTest', true);
         this.speed = speed;
+        this.animationSpeed = 10;
     }
     
     public update() : void
@@ -17,15 +18,19 @@ class Puss extends SpriteObject
         {
             case 38: //UP
                 this.direction.y = -1;
+                this.animationY = 3;
                 break;
             case 39: //RIGHT
                 this.direction.x = 1;
+                this.animationY = 2;
                 break;
             case 40: //DOWN
                 this.direction.y = 1;
+                this.animationY = 0;
                 break;
             case 37: //LEFT
                 this.direction.x = -1;
+                this.animationY = 1;
                 break;               
         }
     }
@@ -36,15 +41,19 @@ class Puss extends SpriteObject
         {
             case 38: //UP
                 this.direction.y = 0;
+                this.animationY = 0;
                 break;
             case 39: //RIGHT
                 this.direction.x = 0;
+                this.animationY = 0;
                 break;
             case 40: //DOWN
                 this.direction.y = 0;
+                this.animationY = 0;
                 break;
             case 37: //LEFT
                 this.direction.x = 0;
+                this.animationY = 0;
                 break;
         }
     }

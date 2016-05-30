@@ -171,6 +171,12 @@ class Scene {
 class SpriteObject extends GameObject {
     constructor(position, width, height, img, needsInput = false) {
         super(position, width, height, needsInput);
+        this.currentFrame = 0;
+        this.animationY = 0;
+        this.animationSpeed = 0;
+        this.frameWidth = 57;
+        this.frameHeight = 55;
+        this.timer = 0;
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/' + img + '.png';
     }
@@ -178,7 +184,17 @@ class SpriteObject extends GameObject {
         super.update();
     }
     draw(ctx) {
-        ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
+        console.log(this.currentFrame, this.frameWidth, this.frameHeight);
+        this.timer++;
+        if (Vector2.length(this.direction) > 0) {
+            if (this.timer % this.animationSpeed == 0) {
+                this.currentFrame++;
+            }
+            if (this.currentFrame > 3) {
+                this.currentFrame = 0;
+            }
+        }
+        ctx.drawImage(this.sprite, this.currentFrame * this.frameWidth, this.animationY * this.frameHeight, this.frameHeight, this.frameWidth, this.position.x, this.position.y, this.frameWidth, this.frameHeight);
     }
     onKeyDown(event) {
     }
@@ -222,14 +238,21 @@ class Vector2 {
     static substract(v1, v2) {
         return new Vector2(v1.x + v2.x, v1.y + v2.y);
     }
+    static length(v1) {
+        return Math.sqrt((v1.x * v1.x) + (v1.y * v1.y));
+    }
+    static isZero(v1) {
+        return ((v1.x == Vector2.zero.x && v1.y == Vector2.zero.y) ? true : false);
+    }
 }
 Vector2.zero = new Vector2(0, 0);
 class Knightsalot extends GameObject {
 }
 class Puss extends SpriteObject {
     constructor(position, width, height, speed) {
-        super(position, width, height, 'cat', true);
+        super(position, width, height, 'spriteTest', true);
         this.speed = speed;
+        this.animationSpeed = 10;
     }
     update() {
         super.update();
@@ -238,15 +261,19 @@ class Puss extends SpriteObject {
         switch (event.keyCode) {
             case 38:
                 this.direction.y = -1;
+                this.animationY = 3;
                 break;
             case 39:
                 this.direction.x = 1;
+                this.animationY = 2;
                 break;
             case 40:
                 this.direction.y = 1;
+                this.animationY = 0;
                 break;
             case 37:
                 this.direction.x = -1;
+                this.animationY = 1;
                 break;
         }
     }
@@ -254,15 +281,19 @@ class Puss extends SpriteObject {
         switch (event.keyCode) {
             case 38:
                 this.direction.y = 0;
+                this.animationY = 0;
                 break;
             case 39:
                 this.direction.x = 0;
+                this.animationY = 0;
                 break;
             case 40:
                 this.direction.y = 0;
+                this.animationY = 0;
                 break;
             case 37:
                 this.direction.x = 0;
+                this.animationY = 0;
                 break;
         }
     }
@@ -272,7 +303,7 @@ class SplashScene extends Scene {
         super.init();
         this.gameObjects.push(new TextObject(new Vector2(window.innerWidth / 2, 100), 400, 50, "Welcome to zha jungle, ya!", 36, 100, 0, 0));
         this.gameObjects.push(new FadeText(new Vector2(window.innerWidth / 2, window.innerHeight - 200), 600, 50, "Druk op een toets om door te gaan!", 36, 0, 100, 0, 0.25, 1.0, 5));
-        this.gameObjects.push(new Puss(new Vector2(window.innerWidth / 2, window.innerHeight / 2 + 100), 100, 250, 5));
+        this.gameObjects.push(new Puss(new Vector2(window.innerWidth / 2, window.innerHeight / 2 + 100), 100, 250, 3));
     }
     update() {
         super.update();
