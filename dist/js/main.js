@@ -171,6 +171,12 @@ class Scene {
 class SpriteObject extends GameObject {
     constructor(position, width, height, img, needsInput = false) {
         super(position, width, height, needsInput);
+        this.currentFrame = 0;
+        this.animationY = 0;
+        this.animationSpeed = 0;
+        this.frameWidth = 57;
+        this.frameHeight = 55;
+        this.timer = 0;
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/' + img + '.png';
     }
@@ -178,7 +184,17 @@ class SpriteObject extends GameObject {
         super.update();
     }
     draw(ctx) {
-        ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
+        console.log(this.currentFrame, this.frameWidth, this.frameHeight);
+        this.timer++;
+        if (Vector2.length(this.direction) > 0) {
+            if (this.timer % this.animationSpeed == 0) {
+                this.currentFrame++;
+            }
+            if (this.currentFrame > 3) {
+                this.currentFrame = 0;
+            }
+        }
+        ctx.drawImage(this.sprite, this.currentFrame * this.frameWidth, this.animationY * this.frameHeight, this.frameHeight, this.frameWidth, this.position.x, this.position.y, this.frameWidth, this.frameHeight);
     }
     onKeyDown(event) {
     }
@@ -186,17 +202,26 @@ class SpriteObject extends GameObject {
     }
 }
 class TextObject extends GameObject {
-    constructor(position, width, height, text, size) {
+    constructor(position, width, height, text, size, r, g, b, a = 1) {
         super(position, width, height);
+        this.color = [4];
         this.text = text;
         this.size = size;
+        this.color[0] = r;
+        this.color[1] = g;
+        this.color[2] = b;
+        this.color[3] = a;
+        this.cacheColorString();
     }
     update() {
     }
     draw(ctx) {
-        ctx.fillStyle = "rgba(0, 0, 0, 100)";
+        ctx.fillStyle = this.textColor;
         ctx.font = this.size + "px Arial";
         ctx.fillText(this.text, this.position.x, this.position.y, this.width);
+    }
+    cacheColorString() {
+        this.textColor = "rgba(" + this.color[0] + "," + this.color[1] + "," + this.color[2] + "," + this.color[3] + ")";
     }
 }
 class Vector2 {
@@ -213,14 +238,21 @@ class Vector2 {
     static substract(v1, v2) {
         return new Vector2(v1.x + v2.x, v1.y + v2.y);
     }
+    static length(v1) {
+        return Math.sqrt((v1.x * v1.x) + (v1.y * v1.y));
+    }
+    static isZero(v1) {
+        return ((v1.x == Vector2.zero.x && v1.y == Vector2.zero.y) ? true : false);
+    }
 }
 Vector2.zero = new Vector2(0, 0);
 class Knightsalot extends GameObject {
 }
 class Puss extends SpriteObject {
     constructor(position, width, height, speed) {
-        super(position, width, height, 'cat', true);
+        super(position, width, height, 'spriteTest', true);
         this.speed = speed;
+        this.animationSpeed = 10;
     }
     update() {
         super.update();
@@ -229,15 +261,19 @@ class Puss extends SpriteObject {
         switch (event.keyCode) {
             case 38:
                 this.direction.y = -1;
+                this.animationY = 3;
                 break;
             case 39:
                 this.direction.x = 1;
+                this.animationY = 2;
                 break;
             case 40:
                 this.direction.y = 1;
+                this.animationY = 0;
                 break;
             case 37:
                 this.direction.x = -1;
+                this.animationY = 1;
                 break;
         }
     }
@@ -245,15 +281,19 @@ class Puss extends SpriteObject {
         switch (event.keyCode) {
             case 38:
                 this.direction.y = 0;
+                this.animationY = 0;
                 break;
             case 39:
                 this.direction.x = 0;
+                this.animationY = 0;
                 break;
             case 40:
                 this.direction.y = 0;
+                this.animationY = 0;
                 break;
             case 37:
                 this.direction.x = 0;
+                this.animationY = 0;
                 break;
         }
     }
@@ -261,9 +301,9 @@ class Puss extends SpriteObject {
 class SplashScene extends Scene {
     init() {
         super.init();
-        this.gameObjects.push(new TextObject(new Vector2(window.innerWidth / 2, 100), 400, 50, "Welcome to zha jungle, ya!", 36));
-        this.gameObjects.push(new FadeText(new Vector2(window.innerWidth / 2, window.innerHeight - 200), 600, 50, "Druk op een toets om door te gaan!", 36, 0.25, 1.0, 5));
-        this.gameObjects.push(new Puss(new Vector2(window.innerWidth / 2, window.innerHeight / 2 + 100), 100, 250, 5));
+        this.gameObjects.push(new TextObject(new Vector2(window.innerWidth / 2, 100), 400, 50, "Welcome to zha jungle, ya!", 36, 100, 0, 0));
+        this.gameObjects.push(new FadeText(new Vector2(window.innerWidth / 2, window.innerHeight - 200), 600, 50, "Druk op een toets om door te gaan!", 36, 0, 100, 0, 0.25, 1.0, 5));
+        this.gameObjects.push(new Puss(new Vector2(window.innerWidth / 2, window.innerHeight / 2 + 100), 100, 250, 3));
     }
     update() {
         super.update();
@@ -273,32 +313,30 @@ class SplashScene extends Scene {
     }
 }
 class FadeText extends TextObject {
-    constructor(position, width, height, text, size, low, high, duration) {
-        super(position, width, height, text, size);
+    constructor(position, width, height, text, size, r, g, b, low, high, duration) {
+        super(position, width, height, text, size, r, g, b);
         this.lowAlpha = low;
         this.highAlpha = high;
         this.duration = duration;
-        this.alpha = 1.0;
         this.revert = false;
     }
     update() {
     }
     draw(ctx) {
         if (!this.revert) {
-            if (this.alpha > this.lowAlpha)
-                this.alpha -= .005;
+            if (this.color[3] > this.lowAlpha)
+                this.color[3] -= .005;
             else
                 this.revert = true;
         }
         else {
-            if (this.alpha <= this.highAlpha)
-                this.alpha += .01;
+            if (this.color[3] <= this.highAlpha)
+                this.color[3] += .01;
             else
                 this.revert = false;
         }
-        ctx.fillStyle = "rgba(0, 0, 0, " + this.alpha + ")";
-        ctx.font = this.size + "px Arial";
-        ctx.fillText(this.text, this.position.x, this.position.y, this.width);
+        this.cacheColorString();
+        super.draw(ctx);
     }
 }
 //# sourceMappingURL=main.js.map

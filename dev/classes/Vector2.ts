@@ -25,4 +25,12 @@ class Vector2
     {
         return new Vector2(v1.x + v2.x, v1.y + v2.y);
     }
+    public static length(v1: Vector2) {
+        return Math.sqrt((v1.x * v1.x) + (v1.y * v1.y))
+    }
+    
+    public static isZero(v1:Vector2)
+    {
+        return ((v1.x == Vector2.zero.x && v1.y == Vector2.zero.y) ? true : false);
+    }
 }
