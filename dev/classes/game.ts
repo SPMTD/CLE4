@@ -11,6 +11,7 @@ class Game
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
     private activeScene:Scene;
+    private audio:HTMLAudioElement;
  
     constructor() 
     {
@@ -24,6 +25,8 @@ class Game
         
         window.addEventListener("keydown", (e) => this.onKeyDown(e));
         window.addEventListener("keyup"  , (e) => this.onKeyUp(e));
+        
+        this.audio = document.getElementsByTagName("audio")[0];
         
         requestAnimationFrame(() => this.update());    
     }

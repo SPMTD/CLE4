@@ -90,6 +90,7 @@ class Game {
         this.activateScene(E_SCENES.SPLASH_SCREEN);
         window.addEventListener("keydown", (e) => this.onKeyDown(e));
         window.addEventListener("keyup", (e) => this.onKeyUp(e));
+        this.audio = document.getElementsByTagName("audio")[0];
         requestAnimationFrame(() => this.update());
     }
     activateScene(scene) {
