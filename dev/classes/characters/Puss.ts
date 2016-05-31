@@ -44,16 +44,22 @@ class Puss extends SpriteObject
                 this.animationY = 0;
                 break;
             case 39: //RIGHT
-                this.direction.x = 0;
-                this.animationY = 0;
+                if(this.direction.x == 1) // basically, we want to prevent this call if the user is already moving in an opposite direction (going left, right quickly for example).
+                {
+                    this.direction.x = 0;
+                    this.animationY = 0;
+                }
                 break;
             case 40: //DOWN
                 this.direction.y = 0;
                 this.animationY = 0;
                 break;
             case 37: //LEFT
-                this.direction.x = 0;
-                this.animationY = 0;
+                if(this.direction.x == -1)
+                {
+                    this.direction.x = 0;
+                    this.animationY = 0;
+                }
                 break;
         }
     }
