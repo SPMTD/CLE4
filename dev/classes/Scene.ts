@@ -1,6 +1,8 @@
 class Scene
 {
     public gameObjects: GameObject[] = [];
+    public goNeedInput: GameObject[] = []; // Array of GameObjects that require input events (reference stored).
+    public goHasCollider: GameObject[] = [] // Array of GameObjects that have a collider (and so should collide - reference stored).
     
     constructor()
     {
@@ -16,13 +18,32 @@ class Scene
         
     }
     
+    public handleCollisions():void
+    {
+        for(let i = 0; i < this.goHasCollider.length; i++)
+        {
+            for(let j = 0; j < this.goHasCollider.length; j++)
+            {
+                if(i == j)
+                    continue;
+                    
+                if(this.goHasCollider[i].isColliding(this.goHasCollider[j]))
+                {
+                    this.goHasCollider[i].collided();
+                    this.goHasCollider[j].collided();
+                }
+            }
+        }
+    }
+    
     public update() : void 
     {
-        this.checkCollisions();
         for(let i:number = 0; i < this.gameObjects.length; i++)
         {
             this.gameObjects[i].update();
         }
+        
+        this.handleCollisions();
     }
     
     public draw(ctx:CanvasRenderingContext2D): void 
@@ -33,39 +54,35 @@ class Scene
         }
     }
     
-    public checkCollisions(): void
-    {
-        for(let i = 0; i < this.gameObjects.length; i++)
-        {
-            for(let j = 0; j < this.gameObjects.length; j++)
-            {
-                if(i == j)
-                    continue;
-                    
-                if(!this.gameObjects[i].hasCollider || !this.gameObjects[j].hasCollider)
-                    continue;
-                
-                if(this.gameObjects[i].isColliding(this.gameObjects[j]))
-                {
-                    console.log("Hitting nigga");
-                }    
-            }
-        }
-    }
-    
     public onKeyDown(event:KeyboardEvent):void 
     {
-        for(let i:number = 0; i < this.gameObjects.length; i++)
+        for(let i:number = 0; i < this.goNeedInput.length; i++)
         {
-            this.gameObjects[i].onKeyDown(event);
+            this.goNeedInput[i].onKeyDown(event);
         }
     }
     
     public onKeyUp(event:KeyboardEvent):void 
     {
-        for(let i:number = 0; i < this.gameObjects.length; i++)
+        for(let i:number = 0; i < this.goNeedInput.length; i++)
         {
-            this.gameObjects[i].onKeyUp(event);
+            this.goNeedInput[i].onKeyUp(event);
+        }
+    }
+    
+    public processGameObjects():void
+    {
+        for(let i = 0; i < this.gameObjects.length; i++)
+        {
+            if(this.gameObjects[i].needsInput)
+            {
+                this.goNeedInput.push(this.gameObjects[i]);
+            }
+            
+            if(this.gameObjects[i].hasCollider)
+            {
+                this.goHasCollider.push(this.gameObjects[i]);
+            }
         }
     }
 }

@@ -23,7 +23,7 @@ class Vector2
     
     public static substract(v1:Vector2, v2:Vector2)
     {
-        return new Vector2(v1.x + v2.x, v1.y + v2.y);
+        return new Vector2(v1.x - v2.x, v1.y - v2.y);
     }
     public static length(v1: Vector2) {
         return Math.sqrt((v1.x * v1.x) + (v1.y * v1.y))

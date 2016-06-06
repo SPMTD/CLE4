@@ -22,8 +22,9 @@ class Rectangle {
         return Math.abs(differencex) < this.width/2 && Math.abs(differencey) < this.height/2;
     }
 
-    public hitsOtherRectangle(rec: Rectangle): boolean {
-return !(rec.x > this.x + this.width || 
+    public hitsOtherRectangle(rec: Rectangle): boolean 
+    {
+        return !(rec.x > this.x + this.width || 
            rec.x + rec.width < this.x || 
            rec.y > this.y + this.height ||
            rec.y + rec.height < this.y);

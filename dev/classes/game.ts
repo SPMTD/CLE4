@@ -4,6 +4,12 @@ enum E_SCENES
     MENU_SCREEN
 }
 
+enum TILED_LAYERS
+{
+    TILE_LAYER,
+    COLLISION_LAYER
+}
+
 class Game 
 {
     private canvas: HTMLCanvasElement;
@@ -12,6 +18,7 @@ class Game
     
     public static width:number = 960;
     public static height:number = 540;
+    public static gravity:number = 3;
  
     constructor() 
     {

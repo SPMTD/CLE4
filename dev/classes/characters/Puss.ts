@@ -2,7 +2,7 @@ class Puss extends SpriteObject
 {    
     constructor(position:Vector2, width:number, height:number, speed:number)
     {
-        super(position, width, height, 'spriteTest', true, true);
+        super(position, width, height, 'spriteTest', true, true, true);
         this.speed = speed;
         this.animationSpeed = 10;
     }

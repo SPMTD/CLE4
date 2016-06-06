@@ -3,6 +3,11 @@ var E_SCENES;
     E_SCENES[E_SCENES["SPLASH_SCREEN"] = 0] = "SPLASH_SCREEN";
     E_SCENES[E_SCENES["MENU_SCREEN"] = 1] = "MENU_SCREEN";
 })(E_SCENES || (E_SCENES = {}));
+var TILED_LAYERS;
+(function (TILED_LAYERS) {
+    TILED_LAYERS[TILED_LAYERS["TILE_LAYER"] = 0] = "TILE_LAYER";
+    TILED_LAYERS[TILED_LAYERS["COLLISION_LAYER"] = 1] = "COLLISION_LAYER";
+})(TILED_LAYERS || (TILED_LAYERS = {}));
 class Game {
     constructor() {
         this.canvas = document.getElementsByTagName("canvas")[0];
@@ -42,29 +47,43 @@ class Game {
 }
 Game.width = 960;
 Game.height = 540;
+Game.gravity = 3;
 window.addEventListener("load", function () {
     new Game();
 });
 class GameObject {
-    constructor(position, width, height, needsInput = false, collider = false) {
+    constructor(position, width, height, needsInput = false, collider = false, hasGravity = false) {
         this.speed = 0;
         this.width = width;
         this.height = height;
-        position.x = (position.x - (this.width / 2));
-        position.y = (position.y - (this.height / 2));
         this.position = position;
+        this.oldPosition = position;
+        this.hasGravity = hasGravity;
         this.needsInput = needsInput;
         this.hasCollider = collider;
         this.direction = Vector2.zero;
+        this.hasCollided = false;
         if (this.hasCollider)
-            this.rect = new Rectangle(position.x, position.y, width, height);
+            this.rect = new Rectangle(position.x, position.y, width - (width / 8), height - (height / 8));
     }
     isColliding(r) {
         return this.rect.hitsOtherRectangle(r.rect);
     }
     update() {
-        this.rect = new Rectangle(this.position.x, this.position.y, this.width, this.height);
+        if (this.hasCollider) {
+            let rectPos = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
+            this.rect.x = rectPos.x;
+            this.rect.y = rectPos.y;
+        }
+        if (this.hasGravity) {
+            this.position.y += Game.gravity;
+        }
         this.position = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
+    }
+    collided() {
+        if (this.hasGravity) {
+            this.position.y -= Game.gravity;
+        }
     }
     draw(ctx) { }
     onKeyDown(event) { }
@@ -81,33 +100,34 @@ class LevelLoader {
         this.rowLength = 0;
         this.levelToDraw = false;
     }
-    load(name) {
+    load(name, cb) {
         console.log("Loading: " + name);
+        let goList = [];
         $.getJSON("http://localhost/school/CLE4/Project/dist/" + this.path + name + ".json", (data, textStatus, jqXHR) => {
-            console.log(name + " loaded");
-            this.level = data.layers[0].data;
-            this.rowLength = data.layers[0].width;
-            this.tileWidth = data.tilesets[0].tilewidth;
-            this.tileHeight = data.tilesets[0].tileheight;
-            this.tilesetColomns = data.tilesets[0].columns + 1;
-            this.tilesetWidth = data.tilesets[0].imagewidth;
-            this.tileSet = new Image(data.tilesets[0].imageWidth, data.tilesets[0].imageHeight);
+            let layer = TILED_LAYERS.TILE_LAYER;
+            this.level = data.layers[layer].data;
+            this.rowLength = data.layers[layer].width;
+            this.tileWidth = data.tilesets[layer].tilewidth;
+            this.tileHeight = data.tilesets[layer].tileheight;
+            this.tilesetColomns = data.tilesets[layer].columns + 1;
+            this.tilesetWidth = data.tilesets[layer].imagewidth;
+            this.tileSet = new Image(data.tilesets[layer].imageWidth, data.tilesets[layer].imageHeight);
             this.tileSet.src = 'images/tileset.png';
             this.levelToDraw = true;
-        });
-    }
-    draw(ctx) {
-        if (this.levelToDraw) {
-            ctx.fillStyle = "#000000";
             for (let i = 0; i < this.level.length; i++) {
                 if (this.level[i] != 0) {
                     let indice = this.level[i] - 1;
-                    ctx.drawImage(this.tileSet, (indice % (this.tilesetWidth / this.tileWidth)) * this.tileWidth, Math.floor(indice / (this.tilesetWidth / this.tileHeight)) * this.tileHeight, this.tileWidth, this.tileHeight, (i % this.tilesetColomns) * this.tileWidth, Math.floor(i / this.tilesetColomns) * this.tileHeight, this.tileWidth, this.tileHeight);
+                    goList.push(new Tile(new Vector2((i % this.tilesetColomns) * this.tileWidth, Math.floor(i / this.tilesetColomns) * this.tileHeight), this.tileWidth, this.tileHeight, this.tileSet, (indice % (this.tilesetWidth / this.tileWidth)) * this.tileWidth, Math.floor(indice / (this.tilesetWidth / this.tileHeight)) * this.tileHeight));
                 }
             }
-        }
-    }
-    drawTile(x, y) {
+            layer = TILED_LAYERS.COLLISION_LAYER;
+            let collisionData = data.layers[layer].objects;
+            for (let i = 0; i < collisionData.length; i++) {
+                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true));
+            }
+            console.log(name + " loaded");
+            cb(goList);
+        });
     }
 }
 class Rectangle {
@@ -132,44 +152,55 @@ class Rectangle {
 class Scene {
     constructor() {
         this.gameObjects = [];
+        this.goNeedInput = [];
+        this.goHasCollider = [];
         this.init();
     }
     init() {
     }
     destroy() {
     }
+    handleCollisions() {
+        for (let i = 0; i < this.goHasCollider.length; i++) {
+            for (let j = 0; j < this.goHasCollider.length; j++) {
+                if (i == j)
+                    continue;
+                if (this.goHasCollider[i].isColliding(this.goHasCollider[j])) {
+                    this.goHasCollider[i].collided();
+                    this.goHasCollider[j].collided();
+                }
+            }
+        }
+    }
     update() {
-        this.checkCollisions();
         for (let i = 0; i < this.gameObjects.length; i++) {
             this.gameObjects[i].update();
         }
+        this.handleCollisions();
     }
     draw(ctx) {
         for (let i = 0; i < this.gameObjects.length; i++) {
             this.gameObjects[i].draw(ctx);
         }
     }
-    checkCollisions() {
-        for (let i = 0; i < this.gameObjects.length; i++) {
-            for (let j = 0; j < this.gameObjects.length; j++) {
-                if (i == j)
-                    continue;
-                if (!this.gameObjects[i].hasCollider || !this.gameObjects[j].hasCollider)
-                    continue;
-                if (this.gameObjects[i].isColliding(this.gameObjects[j])) {
-                    console.log("Hitting nigga");
-                }
-            }
-        }
-    }
     onKeyDown(event) {
-        for (let i = 0; i < this.gameObjects.length; i++) {
-            this.gameObjects[i].onKeyDown(event);
+        for (let i = 0; i < this.goNeedInput.length; i++) {
+            this.goNeedInput[i].onKeyDown(event);
         }
     }
     onKeyUp(event) {
+        for (let i = 0; i < this.goNeedInput.length; i++) {
+            this.goNeedInput[i].onKeyUp(event);
+        }
+    }
+    processGameObjects() {
         for (let i = 0; i < this.gameObjects.length; i++) {
-            this.gameObjects[i].onKeyUp(event);
+            if (this.gameObjects[i].needsInput) {
+                this.goNeedInput.push(this.gameObjects[i]);
+            }
+            if (this.gameObjects[i].hasCollider) {
+                this.goHasCollider.push(this.gameObjects[i]);
+            }
         }
     }
 }
@@ -187,13 +218,13 @@ class Wall extends GameObject {
     }
 }
 class SpriteObject extends GameObject {
-    constructor(position, width, height, img, needsInput = false, collider = false) {
-        super(position, width, height, needsInput, collider);
+    constructor(position, width, height, img, needsInput = false, collider = false, hasGravity = false) {
+        super(position, width, height, needsInput, collider, hasGravity);
         this.currentFrame = 0;
         this.animationY = 0;
         this.animationSpeed = 0;
         this.frameWidth = 57;
-        this.frameHeight = 55;
+        this.frameHeight = 57;
         this.timer = 0;
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/' + img + '.png';
@@ -210,7 +241,7 @@ class SpriteObject extends GameObject {
                 this.currentFrame = 0;
             }
         }
-        ctx.drawImage(this.sprite, this.currentFrame * this.frameWidth, this.animationY * this.frameHeight, this.frameHeight, this.frameWidth, this.position.x, this.position.y, this.frameWidth, this.frameHeight);
+        ctx.drawImage(this.sprite, this.currentFrame * this.frameWidth, this.animationY * this.frameHeight, this.frameWidth, this.frameHeight, this.position.x, this.position.y, this.width, this.height);
     }
     onKeyDown(event) {
     }
@@ -241,11 +272,17 @@ class TextObject extends GameObject {
     }
 }
 class Tile extends GameObject {
-    constructor(position, width, height, tileSet, needsInput = false, collider = false) {
+    constructor(position, width, height, tileSet, offsetX, offsetY, needsInput = false, collider = false) {
         super(position, width, height, needsInput, collider);
         this.tileSet = tileSet;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+    }
+    update() {
+        super.update();
     }
     draw(ctx) {
+        ctx.drawImage(this.tileSet, this.offsetX, this.offsetY, this.width, this.height, this.position.x, this.position.y, this.width, this.height);
     }
 }
 class Vector2 {
@@ -260,7 +297,7 @@ class Vector2 {
         return new Vector2(v1.x + v2.x, v1.y + v2.y);
     }
     static substract(v1, v2) {
-        return new Vector2(v1.x + v2.x, v1.y + v2.y);
+        return new Vector2(v1.x - v2.x, v1.y - v2.y);
     }
     static length(v1) {
         return Math.sqrt((v1.x * v1.x) + (v1.y * v1.y));
@@ -274,7 +311,7 @@ class Knightsalot extends GameObject {
 }
 class Puss extends SpriteObject {
     constructor(position, width, height, speed) {
-        super(position, width, height, 'spriteTest', true, true);
+        super(position, width, height, 'spriteTest', true, true, true);
         this.speed = speed;
         this.animationSpeed = 10;
     }
@@ -331,16 +368,19 @@ class SplashScene extends Scene {
         super.init();
         this.gameObjects.push(new TextObject(new Vector2(Game.width / 2, 100), 400, 50, "Welcome to zha jungle, ya!", 36, 100, 0, 0));
         this.gameObjects.push(new FadeText(new Vector2(Game.width / 2, Game.height - 200), 600, 50, "Druk op een toets om door te gaan!", 36, 0, 100, 0, 0.25, 1.0, 5));
-        this.gameObjects.push(new Puss(new Vector2(0, 0), 57, 55, 3));
-        this.gameObjects.push(new Wall(new Vector2(600, Game.height / 2), 64, 256, false, true));
+        this.gameObjects.push(new Puss(new Vector2(0, 0), 50, 50, 3));
         this.level = new LevelLoader();
-        this.level.load("test2");
+        this.level.load("test3", (arr) => {
+            for (let i = 0; i < arr.length; i++) {
+                this.gameObjects.push(arr[i]);
+            }
+            super.processGameObjects();
+        });
     }
     update() {
         super.update();
     }
     draw(ctx) {
-        this.level.draw(ctx);
         super.draw(ctx);
     }
 }

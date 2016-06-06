@@ -11,73 +11,55 @@ class LevelLoader
     private tilesetWidth:number;
     private levelToDraw:boolean = false;
 
-    public load(name:string) : void
+    public load(name:string, cb : (arr:Array<GameObject>) => any)
     {
         console.log("Loading: " + name);
+        let goList = [];
         
         $.getJSON("http://localhost/school/CLE4/Project/dist/" + this.path + name + ".json", (data: any, textStatus: string, jqXHR: JQueryXHR) => 
         {
-            console.log(name + " loaded");
-            this.level = data.layers[0].data;
-            this.rowLength = data.layers[0].width;
-            this.tileWidth = data.tilesets[0].tilewidth;
-            this.tileHeight = data.tilesets[0].tileheight;
-            this.tilesetColomns = data.tilesets[0].columns + 1;
-            this.tilesetWidth = data.tilesets[0].imagewidth;
+            let layer = TILED_LAYERS.TILE_LAYER;
+
+            this.level = data.layers[layer].data;
+            this.rowLength = data.layers[layer].width;
+            this.tileWidth = data.tilesets[layer].tilewidth;
+            this.tileHeight = data.tilesets[layer].tileheight;
+            this.tilesetColomns = data.tilesets[layer].columns + 1;
+            this.tilesetWidth = data.tilesets[layer].imagewidth;
             
-            this.tileSet = new Image(data.tilesets[0].imageWidth, data.tilesets[0].imageHeight);
+            this.tileSet = new Image(data.tilesets[layer].imageWidth, data.tilesets[layer].imageHeight);
             this.tileSet.src = 'images/tileset.png';
             
             this.levelToDraw = true;
             
-            /*for(let i = 0; i < this.level.length; i++)
-            {                   
-                if(this.level[i] != 0)
-                {                    
-                    let indice = this.level[i] - 1;
-                        
-                    ctx.drawImage(this.tileSet, 
-                        (indice % (this.tilesetWidth / this.tileWidth)) * this.tileWidth, 
-                        Math.floor(indice / (this.tilesetWidth / this.tileHeight)) * this.tileHeight, 
-                        this.tileWidth, 
-                        this.tileHeight, 
-                        (i % this.tilesetColomns) * this.tileWidth, 
-                        Math.floor(i / this.tilesetColomns) * this.tileHeight, 
-                        this.tileWidth, 
-                        this.tileHeight);
-                } 
-            }*/
-        });
-    }
-    
-    public draw(ctx:CanvasRenderingContext2D) : void
-    {
-        if(this.levelToDraw)
-        {
-            ctx.fillStyle = "#000000";
-            
             for(let i = 0; i < this.level.length; i++)
             {                   
                 if(this.level[i] != 0)
-                {                    
+                {                   
                     let indice = this.level[i] - 1;
-                        
-                    ctx.drawImage(this.tileSet, 
-                        (indice % (this.tilesetWidth / this.tileWidth)) * this.tileWidth, 
-                        Math.floor(indice / (this.tilesetWidth / this.tileHeight)) * this.tileHeight, 
-                        this.tileWidth, 
-                        this.tileHeight, 
-                        (i % this.tilesetColomns) * this.tileWidth, 
-                        Math.floor(i / this.tilesetColomns) * this.tileHeight, 
-                        this.tileWidth, 
-                        this.tileHeight);
+
+                    goList.push(new Tile(new Vector2((i % this.tilesetColomns) * this.tileWidth, 
+                    Math.floor(i / this.tilesetColomns) * this.tileHeight), 
+                    this.tileWidth, 
+                    this.tileHeight, 
+                    this.tileSet,
+                    (indice % (this.tilesetWidth / this.tileWidth)) * this.tileWidth, Math.floor(indice / (this.tilesetWidth / this.tileHeight)) * this.tileHeight));
                 } 
             }
-        }
-    }
-    
-    public drawTile(x,y) : void
-    {
+            
+            layer = TILED_LAYERS.COLLISION_LAYER;
+            
+            let collisionData = data.layers[layer].objects;
 
+            for(let i = 0; i < collisionData.length; i++)
+            {
+                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true));
+
+            }
+                   
+            console.log(name + " loaded");
+            cb(goList);
+        });
+        
     }
 }
