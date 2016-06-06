@@ -1,81 +1,3 @@
-class Battleship {
-    constructor() {
-        this.directionX = 0;
-        this.directionY = 0;
-        this.x = 0;
-        this.y = 0;
-        this.speed = 0;
-        this.currentFrame = 0;
-        this.animationY = 0;
-        this.animationSpeed = 0;
-        this.frameWidth = 161;
-        this.frameHeight = 161;
-        this.timer = 0;
-        this.createCanvasElement();
-        this.directionX = 0;
-        this.directionY = 0;
-        this.speed = 3;
-        this.animationSpeed = 10;
-        window.addEventListener("keydown", (e) => this.onKeyDown(e));
-        window.addEventListener("keyup", (e) => this.onKeyUp(e));
-    }
-    createCanvasElement() {
-        var canvas = document.getElementsByTagName("canvas")[0];
-        this.context = canvas.getContext('2d');
-        this.image = new Image();
-        this.image.src = 'images/battleship.png';
-    }
-    onKeyDown(event) {
-        switch (event.keyCode) {
-            case 38:
-                this.directionY = -1;
-                this.animationY = 3;
-                break;
-            case 39:
-                this.directionX = 1;
-                this.animationY = 2;
-                break;
-            case 40:
-                this.directionY = 1;
-                this.animationY = 0;
-                break;
-            case 37:
-                this.directionX = -1;
-                this.animationY = 1;
-                break;
-        }
-    }
-    onKeyUp(event) {
-        switch (event.keyCode) {
-            case 38:
-                this.directionY = 0;
-                break;
-            case 39:
-                this.directionX = 0;
-                break;
-            case 40:
-                this.directionY = 0;
-                break;
-            case 37:
-                this.directionX = 0;
-                break;
-        }
-    }
-    move() {
-        this.x = this.x + this.speed * this.directionX;
-        this.y = this.y + this.speed * this.directionY;
-    }
-    draw() {
-        this.timer++;
-        if (this.timer % this.animationSpeed == 0) {
-            this.currentFrame++;
-        }
-        if (this.currentFrame > 3) {
-            this.currentFrame = 0;
-        }
-        this.context.drawImage(this.image, this.currentFrame * this.frameWidth, this.animationY * this.frameHeight, this.frameWidth, this.frameHeight, this.x, this.y, this.frameWidth, this.frameHeight);
-    }
-}
 var E_SCENES;
 (function (E_SCENES) {
     E_SCENES[E_SCENES["SPLASH_SCREEN"] = 0] = "SPLASH_SCREEN";
@@ -122,21 +44,48 @@ window.addEventListener("load", function () {
     new Game();
 });
 class GameObject {
-    constructor(position, width, height, needsInput = false) {
+    constructor(position, width, height, needsInput = false, collider = false) {
+        this.speed = 0;
         this.width = width;
         this.height = height;
         position.x = (position.x - (this.width / 2));
         position.y = (position.y - (this.height / 2));
         this.position = position;
         this.needsInput = needsInput;
+        this.hasCollider = collider;
         this.direction = Vector2.zero;
+        if (this.hasCollider)
+            this.rect = new Rectangle(position.x, position.y, width, height);
+    }
+    isColliding(r) {
+        return this.rect.hitsOtherRectangle(r.rect);
     }
     update() {
+        this.rect = new Rectangle(this.position.x, this.position.y, this.width, this.height);
         this.position = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
     }
     draw(ctx) { }
     onKeyDown(event) { }
     onKeyUp(event) { }
+}
+class Rectangle {
+    constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.width = w;
+        this.height = h;
+    }
+    hitsPoint(posx, posy) {
+        var differencex = this.x - posx;
+        var differencey = this.y - posy;
+        return Math.abs(differencex) < this.width / 2 && Math.abs(differencey) < this.height / 2;
+    }
+    hitsOtherRectangle(rec) {
+        return !(rec.x > this.x + this.width ||
+            rec.x + rec.width < this.x ||
+            rec.y > this.y + this.height ||
+            rec.y + rec.height < this.y);
+    }
 }
 class Scene {
     constructor() {
@@ -148,6 +97,7 @@ class Scene {
     destroy() {
     }
     update() {
+        this.checkCollisions();
         for (let i = 0; i < this.gameObjects.length; i++) {
             this.gameObjects[i].update();
         }
@@ -155,6 +105,19 @@ class Scene {
     draw(ctx) {
         for (let i = 0; i < this.gameObjects.length; i++) {
             this.gameObjects[i].draw(ctx);
+        }
+    }
+    checkCollisions() {
+        for (let i = 0; i < this.gameObjects.length; i++) {
+            for (let j = 0; j < this.gameObjects.length; j++) {
+                if (i == j)
+                    continue;
+                if (!this.gameObjects[i].hasCollider || !this.gameObjects[j].hasCollider)
+                    continue;
+                if (this.gameObjects[i].isColliding(this.gameObjects[j])) {
+                    console.log("Hitting nigga");
+                }
+            }
         }
     }
     onKeyDown(event) {
@@ -168,9 +131,22 @@ class Scene {
         }
     }
 }
+class Wall extends GameObject {
+    constructor(position, width, height, needsInput = false, collider = false) {
+        super(position, width, height, needsInput, collider);
+        this.sprite = new Image(this.width, this.height);
+        this.sprite.src = 'images/wall.png';
+    }
+    update() {
+        super.update();
+    }
+    draw(ctx) {
+        ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
+    }
+}
 class SpriteObject extends GameObject {
-    constructor(position, width, height, img, needsInput = false) {
-        super(position, width, height, needsInput);
+    constructor(position, width, height, img, needsInput = false, collider = false) {
+        super(position, width, height, needsInput, collider);
         this.currentFrame = 0;
         this.animationY = 0;
         this.animationSpeed = 0;
@@ -184,12 +160,10 @@ class SpriteObject extends GameObject {
         super.update();
     }
     draw(ctx) {
-        console.log(this.currentFrame, this.frameWidth, this.frameHeight);
         this.timer++;
         if (Vector2.length(this.direction) > 0) {
-            if (this.timer % this.animationSpeed == 0) {
+            if (this.timer % this.animationSpeed == 0)
                 this.currentFrame++;
-            }
             if (this.currentFrame > 3) {
                 this.currentFrame = 0;
             }
@@ -203,7 +177,7 @@ class SpriteObject extends GameObject {
 }
 class TextObject extends GameObject {
     constructor(position, width, height, text, size, r, g, b, a = 1) {
-        super(position, width, height);
+        super(position, width, height, false, false);
         this.color = [4];
         this.text = text;
         this.size = size;
@@ -250,7 +224,7 @@ class Knightsalot extends GameObject {
 }
 class Puss extends SpriteObject {
     constructor(position, width, height, speed) {
-        super(position, width, height, 'spriteTest', true);
+        super(position, width, height, 'spriteTest', true, true);
         this.speed = speed;
         this.animationSpeed = 10;
     }
@@ -303,7 +277,8 @@ class SplashScene extends Scene {
         super.init();
         this.gameObjects.push(new TextObject(new Vector2(window.innerWidth / 2, 100), 400, 50, "Welcome to zha jungle, ya!", 36, 100, 0, 0));
         this.gameObjects.push(new FadeText(new Vector2(window.innerWidth / 2, window.innerHeight - 200), 600, 50, "Druk op een toets om door te gaan!", 36, 0, 100, 0, 0.25, 1.0, 5));
-        this.gameObjects.push(new Puss(new Vector2(window.innerWidth / 2, window.innerHeight / 2 + 100), 100, 250, 3));
+        this.gameObjects.push(new Puss(new Vector2(0, 0), 57, 55, 3));
+        this.gameObjects.push(new Wall(new Vector2(600, window.innerHeight / 2), 64, 256, false, true));
     }
     update() {
         super.update();
