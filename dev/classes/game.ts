@@ -1,5 +1,3 @@
-/// <reference path="battleship.ts" />
-
 enum E_SCENES 
 {
     SPLASH_SCREEN,
@@ -11,12 +9,15 @@ class Game
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
     private activeScene:Scene;
+    
+    public static width:number = 960;
+    public static height:number = 540;
  
     constructor() 
     {
         this.canvas = document.getElementsByTagName("canvas")[0];
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        this.canvas.width = Game.width;
+        this.canvas.height = Game.height;
         
         this.context = this.canvas.getContext('2d');
         
