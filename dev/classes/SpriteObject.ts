@@ -1,3 +1,5 @@
+/// <reference path="Wall.ts" />
+
 class SpriteObject extends GameObject
 {
     private currentFrame:   number      = 0;
@@ -9,15 +11,47 @@ class SpriteObject extends GameObject
     
     private timer:          number      = 0;
     
-    private context: CanvasRenderingContext2D;
     public sprite:HTMLImageElement;
     
-    constructor(position:Vector2, width:number, height:number, img:string, needsInput:Boolean = false)
+    constructor(position:Vector2, width:number, height:number, img:string, needsInput:Boolean = false, collider:Boolean = false)
     {
-        super(position, width, height, needsInput);
+        super(position, width, height, needsInput, collider);
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/' + img + '.png'; 
     }
+        
+    /*public getPositions(sprite) {
+        var posx = this.position.x;
+        var posy = this.position.y;
+        let height = this.height;
+        let width = this.width;
+        return [ 
+                [posx, posx + width],
+                [posy, posy + height] 
+               ];
+    }
+    public comparePositions(p1, p2) {
+        var x1 = p1[0] < p2[0] ? p1 : p2;
+        var x2 = p1[0] < p2[0] ? p2 : p1;
+        return x1[1] > x2[0] || x1[0] == x2[0] ? true : false;
+        
+    }
+    
+    public checkCollisions() {
+        var wall = Wall[0];
+        var pos = this.getPositions(Wall);
+        var pos2 = this.getPositions(this.sprite);
+        
+        var horizontalMatch = this.comparePositions(pos[0], pos2[0]);
+        var verticalMatch = this.comparePositions(pos[1], pos2[1]);
+        var match = horizontalMatch && verticalMatch;
+        
+        console.log(this.getPositions(this.sprite));
+        
+        if(match) {
+            console.log("COLLISIONNNNNNNN")
+        }
+    }*/
     
     public update()
     {
@@ -27,16 +61,17 @@ class SpriteObject extends GameObject
     
     public draw(ctx:CanvasRenderingContext2D)
     {
-        console.log(this.currentFrame, this.frameWidth, this.frameHeight);
         this.timer++;
-        if(Vector2.length(this.direction) > 0) {
-        
-        if(this.timer % this.animationSpeed == 0){this.currentFrame++;}
-        
-        if(this.currentFrame > 3 ) {
-            this.currentFrame = 0;
+        if(Vector2.length(this.direction) > 0) 
+        {
+            if(this.timer % this.animationSpeed == 0)
+                this.currentFrame++;
+            
+            if(this.currentFrame > 3 ) 
+            {
+                this.currentFrame = 0;
+            }
         }
-    }
         
         ctx.drawImage(
             this.sprite,
@@ -48,6 +83,7 @@ class SpriteObject extends GameObject
             this.position.y,
             this.frameWidth,
             this.frameHeight);
+            
     }
     
 
