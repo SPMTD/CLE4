@@ -1,3 +1,5 @@
+/// <reference path="battleship.ts" />
+
 enum E_SCENES 
 {
     SPLASH_SCREEN,

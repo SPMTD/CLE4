@@ -8,7 +8,7 @@ class TextObject extends GameObject
     
     constructor(position:Vector2, width:number, height:number, text:string, size:number, r:number, g:number, b:number, a:number = 1)
     {
-        super(position, width, height, false, false);
+        super(position, width, height);
         this.text = text;
         this.size = size;
         this.color[0] = r;
