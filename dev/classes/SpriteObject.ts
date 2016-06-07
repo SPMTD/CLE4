@@ -13,9 +13,9 @@ class SpriteObject extends GameObject
     
     public sprite:HTMLImageElement;
     
-    constructor(position:Vector2, width:number, height:number, img:string, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false)
+    constructor(position:Vector2, width:number, height:number, img:string, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false, type:E_COLLIDER_TYPES = E_COLLIDER_TYPES.PROP)
     {
-        super(position, width, height, needsInput, collider, hasGravity);
+        super(position, width, height, needsInput, collider, hasGravity, type);
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/' + img + '.png'; 
     }

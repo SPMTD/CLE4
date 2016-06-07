@@ -8,15 +8,31 @@ var TILED_LAYERS;
     TILED_LAYERS[TILED_LAYERS["TILE_LAYER"] = 0] = "TILE_LAYER";
     TILED_LAYERS[TILED_LAYERS["COLLISION_LAYER"] = 1] = "COLLISION_LAYER";
 })(TILED_LAYERS || (TILED_LAYERS = {}));
+var E_COLLIDER_TYPES;
+(function (E_COLLIDER_TYPES) {
+    E_COLLIDER_TYPES[E_COLLIDER_TYPES["GROUND"] = 0] = "GROUND";
+    E_COLLIDER_TYPES[E_COLLIDER_TYPES["CHARACTER"] = 1] = "CHARACTER";
+    E_COLLIDER_TYPES[E_COLLIDER_TYPES["PROP"] = 2] = "PROP";
+})(E_COLLIDER_TYPES || (E_COLLIDER_TYPES = {}));
 class Game {
     constructor() {
+        this.elapsedTime = 0;
+        this.updateLag = 0;
+        this.fpsTimer = 0;
+        this.renderFPS = 0;
+        this.persistentGOs = [];
         this.canvas = document.getElementsByTagName("canvas")[0];
         this.canvas.width = Game.width;
         this.canvas.height = Game.height;
+        this.date = new Date();
         this.context = this.canvas.getContext('2d');
         this.activateScene(E_SCENES.SPLASH_SCREEN);
         window.addEventListener("keydown", (e) => this.onKeyDown(e));
         window.addEventListener("keyup", (e) => this.onKeyUp(e));
+        this.currentTime = this.date.getTime();
+        this.previousTime = this.currentTime;
+        console.log(this.currentTime);
+        this.persistentGOs.push(new TextObject(new Vector2(10, 20), 50, 50, "FPS: ", 14, 100, 0, 0));
         requestAnimationFrame(() => this.update());
     }
     activateScene(scene) {
@@ -30,13 +46,30 @@ class Game {
         }
     }
     update() {
-        this.activeScene.update();
+        this.renderFPS++;
+        this.currentTime = (new Date).getTime();
+        this.elapsedTime = this.currentTime - this.previousTime;
+        this.updateLag += this.elapsedTime;
+        if ((this.currentTime - this.fpsTimer) >= 1000) {
+            this.fpsTimer = this.currentTime;
+            (this.persistentGOs[0]).text = "FPS: " + this.renderFPS;
+            this.renderFPS = 0;
+        }
+        while (this.updateLag >= Game.MS_UPDATE_LAG) {
+            this.activeScene.update();
+            for (let g of this.persistentGOs)
+                g.update();
+            this.updateLag -= Game.MS_UPDATE_LAG;
+        }
         this.draw();
+        this.previousTime = this.currentTime;
         requestAnimationFrame(() => this.update());
     }
     draw() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.activeScene.draw(this.context);
+        for (let g of this.persistentGOs)
+            g.draw(this.context);
     }
     onKeyDown(event) {
         this.activeScene.onKeyDown(event);
@@ -44,16 +77,55 @@ class Game {
     onKeyUp(event) {
         this.activeScene.onKeyUp(event);
     }
+    static colliderStringToType(str) {
+        let type = E_COLLIDER_TYPES.PROP;
+        switch (str) {
+            case "character":
+                type = E_COLLIDER_TYPES.CHARACTER;
+                break;
+            case "ground":
+                type = E_COLLIDER_TYPES.GROUND;
+                break;
+            case "prop":
+                type = E_COLLIDER_TYPES.PROP;
+                break;
+        }
+        return type;
+    }
 }
 Game.width = 960;
 Game.height = 540;
-Game.gravity = 3;
+Game.gravity = 5;
+Game.MS_UPDATE_LAG = 33;
+/// <reference path="classes/game.ts" />
 window.addEventListener("load", function () {
     new Game();
 });
+class BoxCollider {
+    constructor(x, y, w, h, type) {
+        this.x = x;
+        this.y = y;
+        this.width = w;
+        this.height = h;
+        this.type = type;
+    }
+    hitsPoint(posx, posy) {
+        var differencex = this.x - posx;
+        var differencey = this.y - posy;
+        return Math.abs(differencex) < this.width / 2 && Math.abs(differencey) < this.height / 2;
+    }
+    hitsOtherCollider(rec) {
+        return !(rec.x > this.x + this.width ||
+            rec.x + rec.width < this.x ||
+            rec.y > this.y + this.height ||
+            rec.y + rec.height < this.y);
+    }
+}
 class GameObject {
-    constructor(position, width, height, needsInput = false, collider = false, hasGravity = false) {
+    constructor(position, width, height, needsInput = false, collider = false, hasGravity = false, type = E_COLLIDER_TYPES.PROP) {
         this.speed = 0;
+        this.gravity = false;
+        this.grounded = false;
         this.width = width;
         this.height = height;
         this.position = position;
@@ -63,27 +135,40 @@ class GameObject {
         this.hasCollider = collider;
         this.direction = Vector2.zero;
         this.hasCollided = false;
-        if (this.hasCollider)
-            this.rect = new Rectangle(position.x, position.y, width - (width / 8), height - (height / 8));
+        if (this.hasCollider) {
+            this.collider = new BoxCollider(position.x, position.y, width - (width / 8), height - (height / 8), type);
+        }
+        if (this.hasGravity)
+            this.gravity = true;
     }
     isColliding(r) {
-        return this.rect.hitsOtherRectangle(r.rect);
+        return this.collider.hitsOtherCollider(r.collider);
     }
     update() {
+        if (this.hasGravity) {
+            this.grounded = false;
+            this.gravity = true;
+        }
         if (this.hasCollider) {
             let rectPos = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
-            this.rect.x = rectPos.x;
-            this.rect.y = rectPos.y;
+            this.collider.x = rectPos.x;
+            this.collider.y = rectPos.y;
         }
-        if (this.hasGravity) {
+        if ((this.hasGravity && this.gravity) && !this.grounded) {
             this.position.y += Game.gravity;
         }
-        this.position = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
     }
-    collided() {
-        if (this.hasGravity) {
-            this.position.y -= Game.gravity;
+    collided(type) {
+        if (type == E_COLLIDER_TYPES.GROUND) {
+            this.grounded = true;
+            if (this.hasGravity && this.gravity) {
+                this.position.y -= Game.gravity;
+                this.gravity = false;
+            }
         }
+    }
+    colliderType() {
+        return this.collider.type;
     }
     draw(ctx) { }
     onKeyDown(event) { }
@@ -103,7 +188,7 @@ class LevelLoader {
     load(name, cb) {
         console.log("Loading: " + name);
         let goList = [];
-        $.getJSON("http://localhost/school/CLE4/Project/dist/" + this.path + name + ".json", (data, textStatus, jqXHR) => {
+        $.getJSON(this.path + name + ".json", (data, textStatus, jqXHR) => {
             let layer = TILED_LAYERS.TILE_LAYER;
             this.level = data.layers[layer].data;
             this.rowLength = data.layers[layer].width;
@@ -123,30 +208,11 @@ class LevelLoader {
             layer = TILED_LAYERS.COLLISION_LAYER;
             let collisionData = data.layers[layer].objects;
             for (let i = 0; i < collisionData.length; i++) {
-                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true));
+                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true, false, Game.colliderStringToType(collisionData[i].type)));
             }
             console.log(name + " loaded");
             cb(goList);
         });
-    }
-}
-class Rectangle {
-    constructor(x, y, w, h) {
-        this.x = x;
-        this.y = y;
-        this.width = w;
-        this.height = h;
-    }
-    hitsPoint(posx, posy) {
-        var differencex = this.x - posx;
-        var differencey = this.y - posy;
-        return Math.abs(differencex) < this.width / 2 && Math.abs(differencey) < this.height / 2;
-    }
-    hitsOtherRectangle(rec) {
-        return !(rec.x > this.x + this.width ||
-            rec.x + rec.width < this.x ||
-            rec.y > this.y + this.height ||
-            rec.y + rec.height < this.y);
     }
 }
 class Scene {
@@ -166,8 +232,7 @@ class Scene {
                 if (i == j)
                     continue;
                 if (this.goHasCollider[i].isColliding(this.goHasCollider[j])) {
-                    this.goHasCollider[i].collided();
-                    this.goHasCollider[j].collided();
+                    this.goHasCollider[i].collided(this.goHasCollider[j].colliderType());
                 }
             }
         }
@@ -217,9 +282,10 @@ class Wall extends GameObject {
         ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
     }
 }
+/// <reference path="Wall.ts" />
 class SpriteObject extends GameObject {
-    constructor(position, width, height, img, needsInput = false, collider = false, hasGravity = false) {
-        super(position, width, height, needsInput, collider, hasGravity);
+    constructor(position, width, height, img, needsInput = false, collider = false, hasGravity = false, type = E_COLLIDER_TYPES.PROP) {
+        super(position, width, height, needsInput, collider, hasGravity, type);
         this.currentFrame = 0;
         this.animationY = 0;
         this.animationSpeed = 0;
@@ -311,26 +377,34 @@ class Knightsalot extends GameObject {
 }
 class Puss extends SpriteObject {
     constructor(position, width, height, speed) {
-        super(position, width, height, 'spriteTest', true, true, true);
+        super(position, width, height, 'spriteTest', true, true, true, E_COLLIDER_TYPES.CHARACTER);
+        this.jumping = false;
+        this.jumpCount = 0;
         this.speed = speed;
         this.animationSpeed = 10;
     }
     update() {
         super.update();
+        this.position = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
+        if (this.direction.y == -1 && this.grounded) {
+            this.jumping = true;
+            this.jumpCount = 0;
+        }
+        if (this.grounded)
+            this.jumping = false;
+        if (this.jumping && this.jumpCount < 10) {
+            this.jumpCount++;
+            this.position.y -= Game.gravity * 2;
+        }
     }
     onKeyDown(event) {
         switch (event.keyCode) {
             case 38:
                 this.direction.y = -1;
-                this.animationY = 3;
                 break;
             case 39:
                 this.direction.x = 1;
                 this.animationY = 2;
-                break;
-            case 40:
-                this.direction.y = 1;
-                this.animationY = 0;
                 break;
             case 37:
                 this.direction.x = -1;
@@ -342,17 +416,12 @@ class Puss extends SpriteObject {
         switch (event.keyCode) {
             case 38:
                 this.direction.y = 0;
-                this.animationY = 0;
                 break;
             case 39:
                 if (this.direction.x == 1) {
                     this.direction.x = 0;
                     this.animationY = 0;
                 }
-                break;
-            case 40:
-                this.direction.y = 0;
-                this.animationY = 0;
                 break;
             case 37:
                 if (this.direction.x == -1) {
@@ -366,8 +435,7 @@ class Puss extends SpriteObject {
 class SplashScene extends Scene {
     init() {
         super.init();
-        this.gameObjects.push(new TextObject(new Vector2(Game.width / 2, 100), 400, 50, "Welcome to zha jungle, ya!", 36, 100, 0, 0));
-        this.gameObjects.push(new FadeText(new Vector2(Game.width / 2, Game.height - 200), 600, 50, "Druk op een toets om door te gaan!", 36, 0, 100, 0, 0.25, 1.0, 5));
+        this.gameObjects.push(new FadeText(new Vector2(Game.width / 2 - 50, Game.height / 2), 100, 50, "Welkom!", 24, 0, 100, 0, 0.25, 1.0, 0.5));
         this.gameObjects.push(new Puss(new Vector2(0, 0), 50, 50, 3));
         this.level = new LevelLoader();
         this.level.load("test3", (arr) => {
@@ -397,13 +465,13 @@ class FadeText extends TextObject {
     draw(ctx) {
         if (!this.revert) {
             if (this.color[3] > this.lowAlpha)
-                this.color[3] -= .005;
+                this.color[3] -= this.duration / Game.MS_UPDATE_LAG;
             else
                 this.revert = true;
         }
         else {
             if (this.color[3] <= this.highAlpha)
-                this.color[3] += .01;
+                this.color[3] += this.duration / Game.MS_UPDATE_LAG;
             else
                 this.revert = false;
         }

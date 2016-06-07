@@ -29,8 +29,7 @@ class Scene
                     
                 if(this.goHasCollider[i].isColliding(this.goHasCollider[j]))
                 {
-                    this.goHasCollider[i].collided();
-                    this.goHasCollider[j].collided();
+                    this.goHasCollider[i].collided(this.goHasCollider[j].colliderType());
                 }
             }
         }
@@ -41,8 +40,7 @@ class Scene
         for(let i:number = 0; i < this.gameObjects.length; i++)
         {
             this.gameObjects[i].update();
-        }
-        
+        }   
         this.handleCollisions();
     }
     

@@ -8,12 +8,14 @@ class GameObject
     public width:number;
     public height:number;
     public needsInput:Boolean;
-    private rect: Rectangle;
+    private collider: BoxCollider;
     public hasCollider:Boolean;
     public hasCollided:Boolean;
     public hasGravity:Boolean;
+    private gravity:Boolean = false;
+    public grounded:Boolean = false;
     
-    constructor(position:Vector2, width:number, height:number, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false)
+    constructor(position:Vector2, width:number, height:number, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false, type:E_COLLIDER_TYPES = E_COLLIDER_TYPES.PROP)
     {
         this.width = width;
         this.height = height;
@@ -36,37 +38,54 @@ class GameObject
         this.hasCollided = false;
         
         if(this.hasCollider)
-            this.rect = new Rectangle(position.x, position.y, width - (width / 8), height - (height / 8));
+        {
+            this.collider = new BoxCollider(position.x, position.y, width - (width / 8), height - (height / 8), type);
+        }
+
+        if(this.hasGravity)
+            this.gravity = true;
     }
     
     public isColliding(r: GameObject) : boolean
     {
-        return this.rect.hitsOtherRectangle(r.rect);
+        return this.collider.hitsOtherCollider(r.collider);
     }
     
     public update()
-    {
+    {        if(this.hasGravity)
+        {
+            this.grounded = false;
+            this.gravity = true;
+        }
         if(this.hasCollider)
         {
             let rectPos = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
-            this.rect.x = rectPos.x;
-            this.rect.y = rectPos.y;
+            this.collider.x = rectPos.x;
+            this.collider.y = rectPos.y;
         }
-        
-        if(this.hasGravity)
+
+        if((this.hasGravity && this.gravity) && !this.grounded)
         {
             this.position.y += Game.gravity;
         }
-        
-        this.position = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed)); 
     }
     
-    public collided()
-    {    
-        if(this.hasGravity)
-        {
-            this.position.y -= Game.gravity;
+    public collided(type:E_COLLIDER_TYPES) // caused is true if this is the GameObject that caused the collision.
+    {
+        if(type == E_COLLIDER_TYPES.GROUND)
+        {    
+            this.grounded = true;
+            if(this.hasGravity && this.gravity)
+            {
+                this.position.y -= Game.gravity;
+                this.gravity = false;
+            }
         }
+    }
+
+    public colliderType() : E_COLLIDER_TYPES
+    {
+        return this.collider.type;
     }
     
     // Virtual functions that are overridden in extending classes.

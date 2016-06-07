@@ -16,7 +16,7 @@ class LevelLoader
         console.log("Loading: " + name);
         let goList = [];
         
-        $.getJSON("http://localhost/school/CLE4/Project/dist/" + this.path + name + ".json", (data: any, textStatus: string, jqXHR: JQueryXHR) => 
+        $.getJSON(this.path + name + ".json", (data: any, textStatus: string, jqXHR: JQueryXHR) => 
         {
             let layer = TILED_LAYERS.TILE_LAYER;
 
@@ -53,8 +53,7 @@ class LevelLoader
 
             for(let i = 0; i < collisionData.length; i++)
             {
-                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true));
-
+                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true, false, Game.colliderStringToType(collisionData[i].type)));
             }
                    
             console.log(name + " loaded");

@@ -24,14 +24,14 @@ class FadeText extends TextObject
         if(!this.revert)
         {
             if(this.color[3] > this.lowAlpha)
-                this.color[3] -= .005;
+                this.color[3] -= this.duration / Game.MS_UPDATE_LAG;
             else
                 this.revert = true;
         }
         else
         {
             if(this.color[3] <= this.highAlpha)
-                this.color[3] += .01;
+                this.color[3] += this.duration / Game.MS_UPDATE_LAG;
             else
                 this.revert = false;
         }

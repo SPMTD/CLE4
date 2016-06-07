@@ -1,18 +1,20 @@
 /**
- * Rectangle
+ * BoxCollider
  */
-class Rectangle {
+class BoxCollider {
     
     public x : number;
     public y : number;
     public width: number;
     public height: number;
+    public type: E_COLLIDER_TYPES;
     
-    constructor(x:number, y:number, w:number, h:number) {
+    constructor(x:number, y:number, w:number, h:number, type:E_COLLIDER_TYPES) {
         this.x = x;
         this.y = y;
         this.width = w;
         this.height = h;
+        this.type = type;
     }
     
     public hitsPoint(posx:number, posy:number): boolean {
@@ -22,7 +24,7 @@ class Rectangle {
         return Math.abs(differencex) < this.width/2 && Math.abs(differencey) < this.height/2;
     }
 
-    public hitsOtherRectangle(rec: Rectangle): boolean 
+    public hitsOtherCollider(rec: BoxCollider): boolean 
     {
         return !(rec.x > this.x + this.width || 
            rec.x + rec.width < this.x || 
