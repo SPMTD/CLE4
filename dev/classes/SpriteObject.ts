@@ -6,16 +6,18 @@ class SpriteObject extends GameObject
     public animationY:      number      = 0;
     public animationSpeed:  number      = 0;
     
-    private frameWidth:     number      = 57;
-    private frameHeight:    number      = 57;
+    private frameWidth:     number      = 0;
+    private frameHeight:    number      = 0;
     
     private timer:          number      = 0;
     
     public sprite:HTMLImageElement;
     
-    constructor(position:Vector2, width:number, height:number, img:string, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false, type:E_COLLIDER_TYPES = E_COLLIDER_TYPES.PROP)
+    constructor(position:Vector2, width:number, height:number, frameWidth:number, frameHeight:number, img:string, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false, canMove:Boolean = false, type:E_COLLIDER_TYPES = E_COLLIDER_TYPES.PROP)
     {
-        super(position, width, height, needsInput, collider, hasGravity, type);
+        super(position, width, height, needsInput, collider, hasGravity, canMove, type);
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/' + img + '.png'; 
     }
@@ -28,7 +30,7 @@ class SpriteObject extends GameObject
     public draw(ctx:CanvasRenderingContext2D)
     {
         this.timer++;
-        if(Vector2.length(this.direction) > 0) 
+        if(this.direction.sqrMagnitude() > 0) 
         {
             if(this.timer % this.animationSpeed == 0)
                 this.currentFrame++;

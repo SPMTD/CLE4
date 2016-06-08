@@ -29,7 +29,7 @@ class Scene
                     
                 if(this.goHasCollider[i].isColliding(this.goHasCollider[j]))
                 {
-                    this.goHasCollider[i].collided(this.goHasCollider[j].colliderType());
+                    this.goHasCollider[i].collided(this.goHasCollider[j]);
                 }
             }
         }

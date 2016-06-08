@@ -2,6 +2,7 @@ class Vector2
 {
     public x:number;
     public y:number;
+    public r:number;
     
     static zero = new Vector2(0, 0);
     
@@ -9,6 +10,11 @@ class Vector2
     {
         this.x = x;
         this.y = y;
+    }
+
+    public rnd() : number
+    {
+        return this.r;
     }
     
     public static multiply(v1:Vector2, scalar:number)
@@ -25,12 +31,27 @@ class Vector2
     {
         return new Vector2(v1.x - v2.x, v1.y - v2.y);
     }
-    public static length(v1: Vector2) {
-        return Math.sqrt((v1.x * v1.x) + (v1.y * v1.y))
+
+    public magnitude() : number {
+        return Math.sqrt((this.x * this.x) + (this.y * this.y))
+    }
+
+    public sqrMagnitude() : number {
+        return (this.x * this.x) + (this.y * this.y);
+    }
+
+    public static inverse(v1:Vector2)
+    {
+        return new Vector2(-v1.x, -v1.y);
     }
     
     public static isZero(v1:Vector2)
     {
         return ((v1.x == Vector2.zero.x && v1.y == Vector2.zero.y) ? true : false);
+    }
+
+    public static clamp(v1:Vector2, n:number)
+    {
+        return new Vector2(cMath.clamp(v1.x, -n, n), cMath.clamp(v1.y, -n, n));
     }
 }

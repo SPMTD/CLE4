@@ -31,4 +31,9 @@ class BoxCollider {
            rec.y > this.y + this.height ||
            rec.y + rec.height < this.y);
     }
+
+    public draw(ctx:CanvasRenderingContext2D)
+    {
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
 }

@@ -1,28 +1,37 @@
 
 class GameObject
 {
+    public rnd:number;
     public position:Vector2;
     public direction:Vector2;
-    private oldPosition:Vector2;
+    public velocity:Vector2;
+    public acceleration:Vector2;
+    public maxSpeed:number = 5;
+    public drag:number = 0.25;
+
+    protected oldPosition:Vector2;
     public speed:number = 0;
     public width:number;
     public height:number;
     public needsInput:Boolean;
-    private collider: BoxCollider;
+    protected collider: BoxCollider;
     public hasCollider:Boolean;
     public hasCollided:Boolean;
     public hasGravity:Boolean;
-    private gravity:Boolean = false;
+    protected gravity:Boolean = false;
     public grounded:Boolean = false;
+    public canMove:Boolean = false;
     
-    constructor(position:Vector2, width:number, height:number, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false, type:E_COLLIDER_TYPES = E_COLLIDER_TYPES.PROP)
+    constructor(position:Vector2, width:number, height:number, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false, canMove:Boolean = false, type:E_COLLIDER_TYPES = E_COLLIDER_TYPES.PROP)
     {
         this.width = width;
         this.height = height;
         this.position = position;
         this.oldPosition = position;
         this.hasGravity = hasGravity;
-        
+        this.canMove = canMove;
+        this.rnd = Math.random();
+
         /*this.position.x = (this.position.x - (this.width / 2));
         this.position.y = (this.position.y - (this.height / 2));
         
@@ -34,12 +43,14 @@ class GameObject
         
         this.needsInput = needsInput;
         this.hasCollider = collider;
-        this.direction = Vector2.zero;
+        this.direction = new Vector2(0, 0);
+        this.velocity = new Vector2(0, 0);
+        this.acceleration = new Vector2(0, 0);
         this.hasCollided = false;
         
         if(this.hasCollider)
         {
-            this.collider = new BoxCollider(position.x, position.y, width - (width / 8), height - (height / 8), type);
+            this.collider = new BoxCollider(position.x, position.y, width, height, type);
         }
 
         if(this.hasGravity)
@@ -52,16 +63,36 @@ class GameObject
     }
     
     public update()
-    {        if(this.hasGravity)
+    {
+        if(this.canMove)
+        {
+            let vl = this.velocity.sqrMagnitude();
+            this.velocity = Vector2.add(this.velocity, Vector2.multiply(this.direction, this.speed));
+
+            if(vl > 0)
+            {
+                this.velocity = Vector2.add(this.velocity, Vector2.multiply(Vector2.inverse(this.velocity), this.drag));
+            }
+
+            if(vl > 0 && vl < 0.1)
+            {
+                this.velocity = Vector2.zero;
+            }
+
+            if (vl > this.maxSpeed)
+                this.velocity = Vector2.clamp(this.velocity, this.maxSpeed);  
+        }
+            
+        if(this.hasGravity)
         {
             this.grounded = false;
             this.gravity = true;
         }
+
         if(this.hasCollider)
         {
-            let rectPos = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
-            this.collider.x = rectPos.x;
-            this.collider.y = rectPos.y;
+            this.collider.x = this.position.x;
+            this.collider.y = this.position.y;
         }
 
         if((this.hasGravity && this.gravity) && !this.grounded)
@@ -70,16 +101,12 @@ class GameObject
         }
     }
     
-    public collided(type:E_COLLIDER_TYPES) // caused is true if this is the GameObject that caused the collision.
+    public collided(go:GameObject) // caused is true if this is the GameObject that caused the collision.
     {
-        if(type == E_COLLIDER_TYPES.GROUND)
-        {    
-            this.grounded = true;
-            if(this.hasGravity && this.gravity)
-            {
-                this.position.y -= Game.gravity;
-                this.gravity = false;
-            }
+        if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
+        {
+            this.grounded = true;   
+            this.position.y = go.position.y - this.collider.height;
         }
     }
 
@@ -89,7 +116,11 @@ class GameObject
     }
     
     // Virtual functions that are overridden in extending classes.
-    public draw(ctx:CanvasRenderingContext2D) {}
+    public draw(ctx:CanvasRenderingContext2D) 
+    { 
+        if(Game.DEBUG)
+            this.collider.draw(ctx); 
+    }
     
     public onKeyDown(event:KeyboardEvent):void {}
     

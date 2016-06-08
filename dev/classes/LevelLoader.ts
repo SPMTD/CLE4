@@ -53,7 +53,7 @@ class LevelLoader
 
             for(let i = 0; i < collisionData.length; i++)
             {
-                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true, false, Game.colliderStringToType(collisionData[i].type)));
+                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true, false, false, Game.colliderStringToType(collisionData[i].type)));
             }
                    
             console.log(name + " loaded");

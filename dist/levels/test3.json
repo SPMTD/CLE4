@@ -13,7 +13,7 @@
         }, 
         {
          "draworder":"topdown",
-         "height":17,
+         "height":0,
          "name":"Colliders",
          "objects":[
                 {
@@ -25,7 +25,7 @@
                  "visible":true,
                  "width":949,
                  "x":11,
-                 "y":447
+                 "y":448
                 }, 
                 {
                  "height":7,
@@ -98,20 +98,31 @@
                  "id":11,
                  "name":"",
                  "rotation":0,
-                 "type":"prop",
+                 "type":"ground",
                  "visible":true,
                  "width":18,
                  "x":639,
                  "y":413
+                }, 
+                {
+                 "height":0,
+                 "id":16,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":443,
+                 "y":323
                 }],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
-         "width":30,
+         "width":0,
          "x":0,
          "y":0
         }],
- "nextobjectid":14,
+ "nextobjectid":17,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tileheight":32,
@@ -119,7 +130,7 @@
         {
          "columns":29,
          "firstgid":1,
-         "image":"..\/images\/tileset.png",
+         "image":"C:\/Users\/JV\/Downloads\/Magic-Cliffs-Environment\/PNG\/tileset.png",
          "imageheight":320,
          "imagewidth":928,
          "margin":0,

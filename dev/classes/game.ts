@@ -28,6 +28,7 @@ class Game
     public static height:number = 540;
     public static gravity:number = 5;
     public static MS_UPDATE_LAG:number = 33; // 30 fps.
+    public static DEBUG:Boolean = true;
 
     private elapsedTime:number = 0;
     private updateLag:number = 0;
@@ -37,14 +38,16 @@ class Game
 
     public renderFPS:number = 0;
     private persistentGOs: GameObject[] = [];
- 
+    private audio:HTMLAudioElement;
+
     constructor() 
     {
         this.canvas = document.getElementsByTagName("canvas")[0];
         this.canvas.width = Game.width;
         this.canvas.height = Game.height;
         this.date = new Date();
-        
+        this.audio = document.getElementsByTagName("audio")[0];
+
         this.context = this.canvas.getContext('2d');
         
         this.activateScene(E_SCENES.SPLASH_SCREEN);

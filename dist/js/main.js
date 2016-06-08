@@ -25,6 +25,7 @@ class Game {
         this.canvas.width = Game.width;
         this.canvas.height = Game.height;
         this.date = new Date();
+        this.audio = document.getElementsByTagName("audio")[0];
         this.context = this.canvas.getContext('2d');
         this.activateScene(E_SCENES.SPLASH_SCREEN);
         window.addEventListener("keydown", (e) => this.onKeyDown(e));
@@ -97,7 +98,7 @@ Game.width = 960;
 Game.height = 540;
 Game.gravity = 5;
 Game.MS_UPDATE_LAG = 33;
-/// <reference path="classes/game.ts" />
+Game.DEBUG = true;
 window.addEventListener("load", function () {
     new Game();
 });
@@ -120,23 +121,33 @@ class BoxCollider {
             rec.y > this.y + this.height ||
             rec.y + rec.height < this.y);
     }
+    draw(ctx) {
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
 }
 class GameObject {
-    constructor(position, width, height, needsInput = false, collider = false, hasGravity = false, type = E_COLLIDER_TYPES.PROP) {
+    constructor(position, width, height, needsInput = false, collider = false, hasGravity = false, canMove = false, type = E_COLLIDER_TYPES.PROP) {
+        this.maxSpeed = 5;
+        this.drag = 0.25;
         this.speed = 0;
         this.gravity = false;
         this.grounded = false;
+        this.canMove = false;
         this.width = width;
         this.height = height;
         this.position = position;
         this.oldPosition = position;
         this.hasGravity = hasGravity;
+        this.canMove = canMove;
+        this.rnd = Math.random();
         this.needsInput = needsInput;
         this.hasCollider = collider;
-        this.direction = Vector2.zero;
+        this.direction = new Vector2(0, 0);
+        this.velocity = new Vector2(0, 0);
+        this.acceleration = new Vector2(0, 0);
         this.hasCollided = false;
         if (this.hasCollider) {
-            this.collider = new BoxCollider(position.x, position.y, width - (width / 8), height - (height / 8), type);
+            this.collider = new BoxCollider(position.x, position.y, width, height, type);
         }
         if (this.hasGravity)
             this.gravity = true;
@@ -145,32 +156,43 @@ class GameObject {
         return this.collider.hitsOtherCollider(r.collider);
     }
     update() {
+        if (this.canMove) {
+            let vl = this.velocity.sqrMagnitude();
+            this.velocity = Vector2.add(this.velocity, Vector2.multiply(this.direction, this.speed));
+            if (vl > 0) {
+                this.velocity = Vector2.add(this.velocity, Vector2.multiply(Vector2.inverse(this.velocity), this.drag));
+            }
+            if (vl > 0 && vl < 0.1) {
+                this.velocity = Vector2.zero;
+            }
+            if (vl > this.maxSpeed)
+                this.velocity = Vector2.clamp(this.velocity, this.maxSpeed);
+        }
         if (this.hasGravity) {
             this.grounded = false;
             this.gravity = true;
         }
         if (this.hasCollider) {
-            let rectPos = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
-            this.collider.x = rectPos.x;
-            this.collider.y = rectPos.y;
+            this.collider.x = this.position.x;
+            this.collider.y = this.position.y;
         }
         if ((this.hasGravity && this.gravity) && !this.grounded) {
             this.position.y += Game.gravity;
         }
     }
-    collided(type) {
-        if (type == E_COLLIDER_TYPES.GROUND) {
+    collided(go) {
+        if (go.colliderType() == E_COLLIDER_TYPES.GROUND) {
             this.grounded = true;
-            if (this.hasGravity && this.gravity) {
-                this.position.y -= Game.gravity;
-                this.gravity = false;
-            }
+            this.position.y = go.position.y - this.collider.height;
         }
     }
     colliderType() {
         return this.collider.type;
     }
-    draw(ctx) { }
+    draw(ctx) {
+        if (Game.DEBUG)
+            this.collider.draw(ctx);
+    }
     onKeyDown(event) { }
     onKeyUp(event) { }
 }
@@ -208,7 +230,7 @@ class LevelLoader {
             layer = TILED_LAYERS.COLLISION_LAYER;
             let collisionData = data.layers[layer].objects;
             for (let i = 0; i < collisionData.length; i++) {
-                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true, false, Game.colliderStringToType(collisionData[i].type)));
+                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true, false, false, Game.colliderStringToType(collisionData[i].type)));
             }
             console.log(name + " loaded");
             cb(goList);
@@ -232,7 +254,7 @@ class Scene {
                 if (i == j)
                     continue;
                 if (this.goHasCollider[i].isColliding(this.goHasCollider[j])) {
-                    this.goHasCollider[i].collided(this.goHasCollider[j].colliderType());
+                    this.goHasCollider[i].collided(this.goHasCollider[j]);
                 }
             }
         }
@@ -282,16 +304,17 @@ class Wall extends GameObject {
         ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
     }
 }
-/// <reference path="Wall.ts" />
 class SpriteObject extends GameObject {
-    constructor(position, width, height, img, needsInput = false, collider = false, hasGravity = false, type = E_COLLIDER_TYPES.PROP) {
-        super(position, width, height, needsInput, collider, hasGravity, type);
+    constructor(position, width, height, frameWidth, frameHeight, img, needsInput = false, collider = false, hasGravity = false, canMove = false, type = E_COLLIDER_TYPES.PROP) {
+        super(position, width, height, needsInput, collider, hasGravity, canMove, type);
         this.currentFrame = 0;
         this.animationY = 0;
         this.animationSpeed = 0;
-        this.frameWidth = 57;
-        this.frameHeight = 57;
+        this.frameWidth = 0;
+        this.frameHeight = 0;
         this.timer = 0;
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/' + img + '.png';
     }
@@ -300,7 +323,7 @@ class SpriteObject extends GameObject {
     }
     draw(ctx) {
         this.timer++;
-        if (Vector2.length(this.direction) > 0) {
+        if (this.direction.sqrMagnitude() > 0) {
             if (this.timer % this.animationSpeed == 0)
                 this.currentFrame++;
             if (this.currentFrame > 3) {
@@ -356,6 +379,9 @@ class Vector2 {
         this.x = x;
         this.y = y;
     }
+    rnd() {
+        return this.r;
+    }
     static multiply(v1, scalar) {
         return new Vector2(v1.x * scalar, v1.y * scalar);
     }
@@ -365,11 +391,20 @@ class Vector2 {
     static substract(v1, v2) {
         return new Vector2(v1.x - v2.x, v1.y - v2.y);
     }
-    static length(v1) {
-        return Math.sqrt((v1.x * v1.x) + (v1.y * v1.y));
+    magnitude() {
+        return Math.sqrt((this.x * this.x) + (this.y * this.y));
+    }
+    sqrMagnitude() {
+        return (this.x * this.x) + (this.y * this.y);
+    }
+    static inverse(v1) {
+        return new Vector2(-v1.x, -v1.y);
     }
     static isZero(v1) {
         return ((v1.x == Vector2.zero.x && v1.y == Vector2.zero.y) ? true : false);
+    }
+    static clamp(v1, n) {
+        return new Vector2(cMath.clamp(v1.x, -n, n), cMath.clamp(v1.y, -n, n));
     }
 }
 Vector2.zero = new Vector2(0, 0);
@@ -377,30 +412,49 @@ class Knightsalot extends GameObject {
 }
 class Puss extends SpriteObject {
     constructor(position, width, height, speed) {
-        super(position, width, height, 'spriteTest', true, true, true, E_COLLIDER_TYPES.CHARACTER);
+        super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.CHARACTER);
         this.jumping = false;
         this.jumpCount = 0;
-        this.speed = speed;
+        this.jumpSpeed = 0;
+        this.speed = 0.75;
+        this.maxSpeed = 5;
+        this.drag = 0.15;
         this.animationSpeed = 10;
+        this.collider.width = 30;
+        this.collider.height = 43;
+        this.jumpSpeed = 0.75;
     }
     update() {
-        super.update();
-        this.position = Vector2.add(this.position, Vector2.multiply(this.direction, this.speed));
+        this.position = Vector2.add(this.position, this.velocity);
         if (this.direction.y == -1 && this.grounded) {
             this.jumping = true;
             this.jumpCount = 0;
+            this.direction.y = 0;
+            this.jumpSpeed = 0.6;
+            this.grounded = false;
         }
-        if (this.grounded)
-            this.jumping = false;
-        if (this.jumping && this.jumpCount < 10) {
-            this.jumpCount++;
-            this.position.y -= Game.gravity * 2;
+        if (this.jumping) {
+            if (this.jumpSpeed > 0) {
+                this.velocity.y -= Game.gravity + this.jumpSpeed;
+                this.jumpSpeed -= 0.1;
+            }
+            else {
+                this.velocity.y = 0;
+                this.jumping = false;
+            }
         }
+        if (this.position.x > Game.width - this.width)
+            this.position.x = Game.width - this.width;
+        if (this.position.x < 0)
+            this.position.x = 0;
+        super.update();
     }
     onKeyDown(event) {
         switch (event.keyCode) {
             case 38:
-                this.direction.y = -1;
+                if (this.grounded) {
+                    this.direction.y = -1;
+                }
                 break;
             case 39:
                 this.direction.x = 1;
@@ -436,7 +490,7 @@ class SplashScene extends Scene {
     init() {
         super.init();
         this.gameObjects.push(new FadeText(new Vector2(Game.width / 2 - 50, Game.height / 2), 100, 50, "Welkom!", 24, 0, 100, 0, 0.25, 1.0, 0.5));
-        this.gameObjects.push(new Puss(new Vector2(0, 0), 50, 50, 3));
+        this.gameObjects.push(new Puss(new Vector2(0, 0), 50, 50, 0.75));
         this.level = new LevelLoader();
         this.level.load("test3", (arr) => {
             for (let i = 0; i < arr.length; i++) {
@@ -478,5 +532,11 @@ class FadeText extends TextObject {
         this.cacheColorString();
         super.draw(ctx);
     }
+}
+class cMath {
+    static clamp(n, min, max) {
+        return Math.min(Math.max(n, min), max);
+    }
+    ;
 }
 //# sourceMappingURL=main.js.map
