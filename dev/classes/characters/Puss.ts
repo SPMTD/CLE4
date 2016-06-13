@@ -15,6 +15,7 @@ class Puss extends SpriteObject
         this.animationSpeed = 10;
         this.collider.width = 30;
         this.collider.height = 43;
+        this.collider.offset = new Vector2(10, 0);
 
         this.jumpSpeed = 0.75;
     }
@@ -27,7 +28,7 @@ class Puss extends SpriteObject
             this.jumpCount = 0;
             this.jumpHeight = 0;
             this.direction.y = 0;
-            this.jumpSpeed = 7.5;
+            this.jumpSpeed = 10;
             this.grounded = false;
         }
 
@@ -55,22 +56,33 @@ class Puss extends SpriteObject
 
         super.update();
     }
+
+    public collided(go:GameObject)
+    {
+        if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
+        {
+            this.grounded = true;   
+            this.position.y = go.position.y - this.collider.height;
+        }
+
+        super.collided(go);
+    }
     
     public onKeyDown(event:KeyboardEvent):void 
     {
         switch(event.keyCode)
         {
-            case 32: //UP
+            case 38: //UP
                 if(this.grounded)
                 {
                     this.direction.y = -1;
                 }
                 break;
-            case 39: case 68: //RIGHT
+            case 39: //RIGHT
                 this.direction.x = 1;
                 this.animationY = 2;
                 break;
-            case 37: case 65: //LEFT
+            case 37: //LEFT
                 this.direction.x = -1;
                 this.animationY = 1;
                 break;               
@@ -81,17 +93,17 @@ class Puss extends SpriteObject
     {
         switch(event.keyCode)
         {
-            case 32: //UP
+            case 38: //UP
                 this.direction.y = 0;
                 break;
-            case 39: case 68: //RIGHT
+            case 39: //RIGHT
                 if(this.direction.x == 1)
                 {
                     this.direction.x = 0;
                     this.animationY = 0;
                 }
                 break;
-            case 37: case 65: //LEFT
+            case 37: //LEFT
                 if(this.direction.x == -1)
                 {
                     this.direction.x = 0;

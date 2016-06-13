@@ -113,19 +113,18 @@ class GameObject
             // Update the collider position in case the GameObject moved.
             if(this.hasCollider)
             {
-                this.collider.x = this.position.x;
-                this.collider.y = this.collider.y;
+                this.collider.updatePosition(this.position);
             }
         }
     }
     
-    public collided(go:GameObject) // caused is true if this is the GameObject that caused the collision.
+    public collided(go:GameObject)
     {
-        if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
+        /*if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
         {
             this.grounded = true;   
             this.position.y = go.position.y - this.collider.height;
-        }
+        }*/
     }
 
     public colliderType() : E_COLLIDER_TYPES

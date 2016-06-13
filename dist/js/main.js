@@ -98,17 +98,18 @@ Game.width = 960;
 Game.height = 540;
 Game.gravity = 5;
 Game.MS_UPDATE_LAG = 33;
-Game.DEBUG = true;
+Game.DEBUG = false;
 window.addEventListener("load", function () {
     new Game();
 });
 class BoxCollider {
-    constructor(x, y, w, h, type) {
+    constructor(x, y, w, h, type, offset = Vector2.zero) {
         this.x = x;
         this.y = y;
         this.width = w;
         this.height = h;
         this.type = type;
+        this.offset = offset;
     }
     hitsPoint(posx, posy) {
         var differencex = this.x - posx;
@@ -124,10 +125,15 @@ class BoxCollider {
     draw(ctx) {
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
+    updatePosition(pos) {
+        this.x = pos.x + this.offset.x;
+        this.y = pos.y + this.offset.y;
+    }
 }
 class GameObject {
     constructor(position, width, height, needsInput = false, collider = false, hasGravity = false, canMove = false, type = E_COLLIDER_TYPES.PROP) {
-        this.maxSpeed = 5;
+        this.maxHorSpeed = 5;
+        this.maxVertSpeed = 7.5;
         this.drag = 0.25;
         this.speed = 0;
         this.gravity = false;
@@ -162,29 +168,31 @@ class GameObject {
             if (vl > 0) {
                 this.velocity = Vector2.add(this.velocity, Vector2.multiply(Vector2.inverse(this.velocity), this.drag));
             }
+            if ((this.hasGravity && this.gravity) && !this.grounded) {
+                this.velocity.y += Game.gravity;
+            }
+            let nv = Vector2.add(this.position, this.velocity);
+            let angle = Math.atan2(nv.x - this.position.x, nv.y - this.position.y) * cMath.rad2deg;
+            if (angle < 0)
+                angle *= -1;
+            if (vl > this.maxHorSpeed && angle > 75)
+                this.velocity = Vector2.clamp(this.velocity, this.maxHorSpeed);
+            else if (vl > this.maxVertSpeed)
+                this.velocity = Vector2.clamp(this.velocity, this.maxVertSpeed);
             if (vl > 0 && vl < 0.1) {
                 this.velocity = Vector2.zero;
             }
-            if (vl > this.maxSpeed)
-                this.velocity = Vector2.clamp(this.velocity, this.maxSpeed);
-        }
-        if (this.hasGravity) {
-            this.grounded = false;
-            this.gravity = true;
-        }
-        if (this.hasCollider) {
-            this.collider.x = this.position.x;
-            this.collider.y = this.position.y;
-        }
-        if ((this.hasGravity && this.gravity) && !this.grounded) {
-            this.position.y += Game.gravity;
+            this.position = Vector2.add(this.position, this.velocity);
+            if (this.hasGravity) {
+                this.grounded = false;
+                this.gravity = true;
+            }
+            if (this.hasCollider) {
+                this.collider.updatePosition(this.position);
+            }
         }
     }
     collided(go) {
-        if (go.colliderType() == E_COLLIDER_TYPES.GROUND) {
-            this.grounded = true;
-            this.position.y = go.position.y - this.collider.height;
-        }
     }
     colliderType() {
         return this.collider.type;
@@ -331,6 +339,8 @@ class SpriteObject extends GameObject {
             }
         }
         ctx.drawImage(this.sprite, this.currentFrame * this.frameWidth, this.animationY * this.frameHeight, this.frameWidth, this.frameHeight, this.position.x, this.position.y, this.width, this.height);
+        if (Game.DEBUG)
+            this.collider.draw(ctx);
     }
     onKeyDown(event) {
     }
@@ -408,35 +418,37 @@ class Vector2 {
     }
 }
 Vector2.zero = new Vector2(0, 0);
-class Knightsalot extends GameObject {
-}
-class Puss extends SpriteObject {
+class Knightsalot extends SpriteObject {
     constructor(position, width, height, speed) {
         super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.CHARACTER);
         this.jumping = false;
         this.jumpCount = 0;
         this.jumpSpeed = 0;
-        this.speed = 0.75;
-        this.maxSpeed = 5;
-        this.drag = 0.15;
+        this.maxJumpHeight = 75;
+        this.jumpHeight = 0;
+        this.speed = 0.70;
+        this.maxHorSpeed = 4;
+        this.drag = 0.2;
         this.animationSpeed = 10;
         this.collider.width = 30;
         this.collider.height = 43;
         this.jumpSpeed = 0.75;
     }
     update() {
-        this.position = Vector2.add(this.position, this.velocity);
         if (this.direction.y == -1 && this.grounded) {
             this.jumping = true;
             this.jumpCount = 0;
+            this.jumpHeight = 0;
             this.direction.y = 0;
-            this.jumpSpeed = 0.6;
+            this.jumpSpeed = 8;
             this.grounded = false;
         }
         if (this.jumping) {
-            if (this.jumpSpeed > 0) {
-                this.velocity.y -= Game.gravity + this.jumpSpeed;
-                this.jumpSpeed -= 0.1;
+            if (this.jumpHeight <= this.maxJumpHeight) {
+                let vel = (Game.gravity + this.jumpSpeed);
+                this.velocity.y = -vel;
+                this.jumpHeight += vel;
+                this.jumpSpeed -= 0.01;
             }
             else {
                 this.velocity.y = 0;
@@ -448,6 +460,101 @@ class Puss extends SpriteObject {
         if (this.position.x < 0)
             this.position.x = 0;
         super.update();
+    }
+    collided(go) {
+        if (go.colliderType() == E_COLLIDER_TYPES.GROUND) {
+            this.grounded = true;
+            this.position.y = go.position.y - this.collider.height;
+        }
+        super.collided(go);
+    }
+    onKeyDown(event) {
+        switch (event.keyCode) {
+            case 87:
+                if (this.grounded) {
+                    this.direction.y = -1;
+                }
+                break;
+            case 68:
+                this.direction.x = 1;
+                this.animationY = 2;
+                break;
+            case 65:
+                this.direction.x = -1;
+                this.animationY = 1;
+                break;
+        }
+    }
+    onKeyUp(event) {
+        switch (event.keyCode) {
+            case 87:
+                this.direction.y = 0;
+                break;
+            case 68:
+                if (this.direction.x == 1) {
+                    this.direction.x = 0;
+                    this.animationY = 0;
+                }
+                break;
+            case 65:
+                if (this.direction.x == -1) {
+                    this.direction.x = 0;
+                    this.animationY = 0;
+                }
+                break;
+        }
+    }
+}
+class Puss extends SpriteObject {
+    constructor(position, width, height, speed) {
+        super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.CHARACTER);
+        this.jumping = false;
+        this.jumpCount = 0;
+        this.jumpSpeed = 0;
+        this.maxJumpHeight = 125;
+        this.jumpHeight = 0;
+        this.speed = 0.75;
+        this.maxHorSpeed = 5;
+        this.drag = 0.15;
+        this.animationSpeed = 10;
+        this.collider.width = 30;
+        this.collider.height = 43;
+        this.collider.offset = new Vector2(10, 0);
+        this.jumpSpeed = 0.75;
+    }
+    update() {
+        if (this.direction.y == -1 && this.grounded) {
+            this.jumping = true;
+            this.jumpCount = 0;
+            this.jumpHeight = 0;
+            this.direction.y = 0;
+            this.jumpSpeed = 10;
+            this.grounded = false;
+        }
+        if (this.jumping) {
+            if (this.jumpHeight <= this.maxJumpHeight) {
+                let vel = (Game.gravity + this.jumpSpeed);
+                this.velocity.y = -vel;
+                this.jumpHeight += vel;
+                this.jumpSpeed -= 0.01;
+            }
+            else {
+                this.velocity.y = 0;
+                this.jumping = false;
+            }
+        }
+        if (this.position.x > Game.width - this.width)
+            this.position.x = Game.width - this.width;
+        if (this.position.x < 0)
+            this.position.x = 0;
+        super.update();
+    }
+    collided(go) {
+        if (go.colliderType() == E_COLLIDER_TYPES.GROUND) {
+            this.grounded = true;
+            this.position.y = go.position.y - this.collider.height;
+        }
+        super.collided(go);
     }
     onKeyDown(event) {
         switch (event.keyCode) {
@@ -491,6 +598,7 @@ class SplashScene extends Scene {
         super.init();
         this.gameObjects.push(new FadeText(new Vector2(Game.width / 2 - 50, Game.height / 2), 100, 50, "Welkom!", 24, 0, 100, 0, 0.25, 1.0, 0.5));
         this.gameObjects.push(new Puss(new Vector2(0, 0), 50, 50, 0.75));
+        this.gameObjects.push(new Knightsalot(new Vector2(0, 0), 50, 50, 0.75));
         this.level = new LevelLoader();
         this.level.load("test3", (arr) => {
             for (let i = 0; i < arr.length; i++) {
@@ -539,4 +647,6 @@ class cMath {
     }
     ;
 }
+cMath.deg2rad = Math.PI / 180;
+cMath.rad2deg = 180 / Math.PI;
 //# sourceMappingURL=main.js.map
