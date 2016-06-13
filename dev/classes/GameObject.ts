@@ -6,7 +6,8 @@ class GameObject
     public direction:Vector2;
     public velocity:Vector2;
     public acceleration:Vector2;
-    public maxSpeed:number = 5;
+    public maxHorSpeed:number = 5;
+    public maxVertSpeed:number = 7.5;
     public drag:number = 0.25;
 
     protected oldPosition:Vector2;
@@ -61,43 +62,60 @@ class GameObject
     {
         return this.collider.hitsOtherCollider(r.collider);
     }
-    
+
     public update()
     {
         if(this.canMove)
         {
             let vl = this.velocity.sqrMagnitude();
+            
             this.velocity = Vector2.add(this.velocity, Vector2.multiply(this.direction, this.speed));
 
+            // drag
             if(vl > 0)
             {
                 this.velocity = Vector2.add(this.velocity, Vector2.multiply(Vector2.inverse(this.velocity), this.drag));
             }
 
+            if((this.hasGravity && this.gravity) && !this.grounded)
+            {
+                this.velocity.y += Game.gravity;
+            }
+
+            let nv = Vector2.add(this.position, this.velocity); // new vector
+            let angle = Math.atan2(nv.x - this.position.x, nv.y - this.position.y) * cMath.rad2deg; // get the angle of movement.
+
+            if(angle < 0)
+                angle *= -1;
+
+            // Only clamp the horizontal movement if the player is moving sideways.
+            // This prevents the player from moving sideways too fast, and also does not clamp jumping and gravity.
+            if(vl > this.maxHorSpeed && angle > 75)
+                this.velocity = Vector2.clamp(this.velocity, this.maxHorSpeed);  
+            else if(vl > this.maxVertSpeed)
+                this.velocity = Vector2.clamp(this.velocity, this.maxVertSpeed);   
+
+            // Makes slowing down look and feel smoother.
             if(vl > 0 && vl < 0.1)
             {
                 this.velocity = Vector2.zero;
             }
 
-            if (vl > this.maxSpeed)
-                this.velocity = Vector2.clamp(this.velocity, this.maxSpeed);  
-        }
-            
-        if(this.hasGravity)
-        {
-            this.grounded = false;
-            this.gravity = true;
-        }
+            this.position = Vector2.add(this.position, this.velocity);
 
-        if(this.hasCollider)
-        {
-            this.collider.x = this.position.x;
-            this.collider.y = this.position.y;
-        }
+            // Reset for next run, they are set on collision check (after update).
+            if(this.hasGravity)
+            {
+                this.grounded = false;
+                this.gravity = true;
+            }
 
-        if((this.hasGravity && this.gravity) && !this.grounded)
-        {
-            this.position.y += Game.gravity;
+            // Update the collider position in case the GameObject moved.
+            if(this.hasCollider)
+            {
+                this.collider.x = this.position.x;
+                this.collider.y = this.collider.y;
+            }
         }
     }
     

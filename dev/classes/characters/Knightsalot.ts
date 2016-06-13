@@ -8,7 +8,7 @@ class Knightsalot extends SpriteObject
     {
         super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.CHARACTER);
         this.speed = 0.75;
-        this.maxSpeed = 5;
+        this.maxHorSpeed = 5;
         this.drag = 0.15;
         this.animationSpeed = 10;
         this.collider.width = 30;
