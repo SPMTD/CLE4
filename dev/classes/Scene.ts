@@ -27,9 +27,10 @@ class Scene
                 if(i == j)
                     continue;
                     
-                if(this.goHasCollider[i].isColliding(this.goHasCollider[j]))
+                let c = this.goHasCollider[i].isColliding(this.goHasCollider[j]);
+                if(c != false)
                 {
-                    this.goHasCollider[i].collided(this.goHasCollider[j]);
+                    this.goHasCollider[i].collided(c);
                 }
             }
         }

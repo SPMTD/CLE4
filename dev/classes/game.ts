@@ -14,7 +14,8 @@ enum E_COLLIDER_TYPES
 {
     GROUND,
     CHARACTER,
-    PROP
+    PROP,
+    GROUND_CHECK
 }
 
 class Game 

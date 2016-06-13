@@ -1,12 +1,12 @@
 
 class GameObject
 {
-    public rnd:number;
     public position:Vector2;
     public direction:Vector2;
     public velocity:Vector2;
     public acceleration:Vector2;
-    public maxSpeed:number = 5;
+    public maxHorSpeed:number = 5;
+    public maxVertSpeed:number = 7.5;
     public drag:number = 0.25;
 
     protected oldPosition:Vector2;
@@ -14,7 +14,7 @@ class GameObject
     public width:number;
     public height:number;
     public needsInput:Boolean;
-    protected collider: BoxCollider;
+    public colliders: BoxCollider[] = [];
     public hasCollider:Boolean;
     public hasCollided:Boolean;
     public hasGravity:Boolean;
@@ -30,7 +30,6 @@ class GameObject
         this.oldPosition = position;
         this.hasGravity = hasGravity;
         this.canMove = canMove;
-        this.rnd = Math.random();
 
         /*this.position.x = (this.position.x - (this.width / 2));
         this.position.y = (this.position.y - (this.height / 2));
@@ -50,16 +49,28 @@ class GameObject
         
         if(this.hasCollider)
         {
-            this.collider = new BoxCollider(position.x, position.y, width, height, type);
+            this.colliders[0] = new BoxCollider(position.x, position.y, width, height, type);
         }
 
         if(this.hasGravity)
             this.gravity = true;
     }
     
-    public isColliding(r: GameObject) : boolean
+    public isColliding(r: GameObject) : any
     {
-        return this.collider.hitsOtherCollider(r.collider);
+        for(let c of this.colliders)
+        {
+            for(let t of r.colliders)
+            {
+                if(c.hitsOtherCollider(t))
+                {
+                    let ret = { collided: true, causedBy: c, causedTo: t };
+                    return ret;
+                }
+            }
+        }
+
+        return false;     
     }
     
     public update()
@@ -67,59 +78,74 @@ class GameObject
         if(this.canMove)
         {
             let vl = this.velocity.sqrMagnitude();
+            
             this.velocity = Vector2.add(this.velocity, Vector2.multiply(this.direction, this.speed));
 
+            // drag
             if(vl > 0)
             {
                 this.velocity = Vector2.add(this.velocity, Vector2.multiply(Vector2.inverse(this.velocity), this.drag));
             }
 
+            if((this.hasGravity && this.gravity) && !this.grounded)
+            {
+                this.velocity.y += Game.gravity;
+            }
+
+            let nv = Vector2.add(this.position, this.velocity); // new vector
+            let angle = Math.atan2(nv.x - this.position.x, nv.y - this.position.y) * cMath.rad2deg; // get the angle of movement.
+
+            if(angle < 0)
+                angle *= -1;
+
+            // Only clamp the horizontal movement if the player is moving sideways.
+            // This prevents the player from moving sideways too fast, and also does not clamp jumping and gravity.
+            if(vl > this.maxHorSpeed && angle > 75)
+                this.velocity = Vector2.clamp(this.velocity, this.maxHorSpeed);  
+            else if(vl > this.maxVertSpeed)
+                this.velocity = Vector2.clamp(this.velocity, this.maxVertSpeed);   
+
+            // Makes slowing down look and feel smoother.
             if(vl > 0 && vl < 0.1)
             {
                 this.velocity = Vector2.zero;
             }
 
-            if (vl > this.maxSpeed)
-                this.velocity = Vector2.clamp(this.velocity, this.maxSpeed);  
-        }
-            
-        if(this.hasGravity)
-        {
-            this.grounded = false;
-            this.gravity = true;
-        }
+            this.position = Vector2.add(this.position, this.velocity);
 
-        if(this.hasCollider)
-        {
-            this.collider.x = this.position.x;
-            this.collider.y = this.position.y;
-        }
+            // Reset for next run, they are set on collision check (after update).
+            if(this.hasGravity)
+            {
+                this.grounded = false;
+                this.gravity = true;
+            }
 
-        if((this.hasGravity && this.gravity) && !this.grounded)
-        {
-            this.position.y += Game.gravity;
+            // Update the collider position in case the GameObject moved.
+            if(this.hasCollider)
+            {
+                for(let c of this.colliders)
+                {
+                    c.x = this.position.x + c.offset.x;
+                    c.y = this.position.y + c.offset.y;
+                }
+            }
         }
     }
     
-    public collided(go:GameObject) // caused is true if this is the GameObject that caused the collision.
+    public collided(C:CollidedReturnObject) // caused is true if this is the GameObject that caused the collision.
     {
-        if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
+        /*if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
         {
             this.grounded = true;   
-            this.position.y = go.position.y - this.collider.height;
-        }
-    }
-
-    public colliderType() : E_COLLIDER_TYPES
-    {
-        return this.collider.type;
+            this.position.y = go.position.y - this.colliders[0].height;
+        }*/
     }
     
     // Virtual functions that are overridden in extending classes.
     public draw(ctx:CanvasRenderingContext2D) 
     { 
         if(Game.DEBUG)
-            this.collider.draw(ctx); 
+            this.colliders[0].draw(ctx); 
     }
     
     public onKeyDown(event:KeyboardEvent):void {}

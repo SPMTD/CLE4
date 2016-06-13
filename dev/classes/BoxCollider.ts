@@ -1,6 +1,14 @@
 /**
  * BoxCollider
  */
+
+interface CollidedReturnObject 
+{
+    collided:Boolean;
+    causedBy:BoxCollider;
+    causedTo:BoxCollider
+}
+
 class BoxCollider {
     
     public x : number;
@@ -8,13 +16,15 @@ class BoxCollider {
     public width: number;
     public height: number;
     public type: E_COLLIDER_TYPES;
+    public offset: Vector2;
     
-    constructor(x:number, y:number, w:number, h:number, type:E_COLLIDER_TYPES) {
+    constructor(x:number, y:number, w:number, h:number, type:E_COLLIDER_TYPES, offset:Vector2 = Vector2.zero) {
         this.x = x;
         this.y = y;
         this.width = w;
         this.height = h;
         this.type = type;
+        this.offset = offset;
     }
     
     public hitsPoint(posx:number, posy:number): boolean {
@@ -35,5 +45,10 @@ class BoxCollider {
     public draw(ctx:CanvasRenderingContext2D)
     {
         ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+
+    public colliderType() : E_COLLIDER_TYPES
+    {
+        return this.type;
     }
 }

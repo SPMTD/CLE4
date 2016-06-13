@@ -50,7 +50,13 @@ class SpriteObject extends GameObject
             this.position.x,
             this.position.y,
             this.width,
-            this.height);  
+            this.height);
+
+            if(Game.DEBUG)
+            {
+                for(let c of this.colliders)
+                    c.draw(ctx); 
+            }
     }
     
     public onKeyDown(event:KeyboardEvent):void 
