@@ -1,6 +1,19 @@
 /**
  * BoxCollider
  */
+
+interface ColliderReturnObject
+{
+    collided:Boolean;
+    direction:ColliderDirection;
+}
+
+interface CollidedReturnObject
+{
+    object:GameObject;
+    direction:ColliderDirection;
+}
+
 class BoxCollider {
     
     public x : number;
@@ -9,7 +22,7 @@ class BoxCollider {
     public height: number;
     public type: E_COLLIDER_TYPES;
     public offset: Vector2;
-    
+
     constructor(x:number, y:number, w:number, h:number, type:E_COLLIDER_TYPES, offset:Vector2 = Vector2.zero) 
     {
         this.x = x;
@@ -28,12 +41,42 @@ class BoxCollider {
         return Math.abs(differencex) < this.width/2 && Math.abs(differencey) < this.height/2;
     }
 
-    public hitsOtherCollider(rec: BoxCollider): boolean 
+    public hitsOtherCollider(rec: BoxCollider): ColliderReturnObject 
     {
-        return !(rec.x > this.x + this.width || 
+        /*return !(rec.x > this.x + this.width || 
            rec.x + rec.width < this.x || 
            rec.y > this.y + this.height ||
-           rec.y + rec.height < this.y);
+           rec.y + rec.height < this.y);*/
+           
+        let rtn = {collided:false, direction:ColliderDirection.NONE};
+
+        let w = 0.5 * (this.width + rec.width);
+        let h = 0.5 * (this.height + rec.height);
+        let dx = ((this.x + (this.width / 2)) - (rec.x + (rec.width / 2)));
+        let dy = ((this.y + (this.height / 2)) - (rec.y + (rec.height / 2)));
+
+        if(Math.abs(dx) <= w && Math.abs(dy) <= h)
+        {
+            let wy = w * dy;
+            let hx = h * dx;
+
+            if(wy > hx)
+            {
+                if(wy > -hx)
+                    rtn = {collided:true, direction:ColliderDirection.TOP};
+                else
+                    rtn = {collided:true, direction:ColliderDirection.LEFT}; 
+            }
+            else
+            {
+                if(wy > -hx)
+                    rtn = {collided:true, direction:ColliderDirection.RIGHT};
+                else
+                    rtn = {collided:true, direction:ColliderDirection.BOTTOM};
+            }
+        }
+
+        return rtn;
     }
 
     public draw(ctx:CanvasRenderingContext2D): void

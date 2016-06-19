@@ -17,6 +17,15 @@ enum E_COLLIDER_TYPES
     PROP
 }
 
+enum ColliderDirection
+{
+    NONE,
+    TOP,
+    BOTTOM,
+    LEFT,
+    RIGHT
+}
+
 class Game 
 {
     private canvas: HTMLCanvasElement;
@@ -28,7 +37,7 @@ class Game
     public static height:number = 540;
     public static gravity:number = 5;
     public static MS_UPDATE_LAG:number = 33; // 30 fps.
-    public static DEBUG:Boolean = false;
+    public static DEBUG:Boolean = true;
 
     private elapsedTime:number = 0;
     private updateLag:number = 0;

@@ -26,10 +26,11 @@ class Scene
             {
                 if(i == j)
                     continue;
-                    
-                if(this.goHasCollider[i].isColliding(this.goHasCollider[j]))
+
+                let col = this.goHasCollider[i].isColliding(this.goHasCollider[j]);   
+                if(col.collided)
                 {
-                    this.goHasCollider[i].collided(this.goHasCollider[j]);
+                    this.goHasCollider[i].collided({object:this.goHasCollider[j], direction:col.direction});
                 }
             }
         }

@@ -58,7 +58,7 @@ class GameObject
             this.gravity = true;
     }
     
-    public isColliding(r: GameObject) : boolean
+    public isColliding(r: GameObject) : ColliderReturnObject
     {
         return this.collider.hitsOtherCollider(r.collider);
     }
@@ -118,7 +118,7 @@ class GameObject
         }
     }
     
-    public collided(go:GameObject)
+    public collided(co:CollidedReturnObject)
     {
         /*if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
         {

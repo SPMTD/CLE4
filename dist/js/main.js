@@ -14,6 +14,14 @@ var E_COLLIDER_TYPES;
     E_COLLIDER_TYPES[E_COLLIDER_TYPES["CHARACTER"] = 1] = "CHARACTER";
     E_COLLIDER_TYPES[E_COLLIDER_TYPES["PROP"] = 2] = "PROP";
 })(E_COLLIDER_TYPES || (E_COLLIDER_TYPES = {}));
+var ColliderDirection;
+(function (ColliderDirection) {
+    ColliderDirection[ColliderDirection["NONE"] = 0] = "NONE";
+    ColliderDirection[ColliderDirection["TOP"] = 1] = "TOP";
+    ColliderDirection[ColliderDirection["BOTTOM"] = 2] = "BOTTOM";
+    ColliderDirection[ColliderDirection["LEFT"] = 3] = "LEFT";
+    ColliderDirection[ColliderDirection["RIGHT"] = 4] = "RIGHT";
+})(ColliderDirection || (ColliderDirection = {}));
 class Game {
     constructor() {
         this.elapsedTime = 0;
@@ -98,10 +106,14 @@ Game.width = 960;
 Game.height = 540;
 Game.gravity = 5;
 Game.MS_UPDATE_LAG = 33;
-Game.DEBUG = false;
+Game.DEBUG = true;
+/// <reference path="classes/game.ts" />
 window.addEventListener("load", function () {
     new Game();
 });
+/**
+ * BoxCollider
+ */
 class BoxCollider {
     constructor(x, y, w, h, type, offset = Vector2.zero) {
         this.x = x;
@@ -117,10 +129,32 @@ class BoxCollider {
         return Math.abs(differencex) < this.width / 2 && Math.abs(differencey) < this.height / 2;
     }
     hitsOtherCollider(rec) {
-        return !(rec.x > this.x + this.width ||
-            rec.x + rec.width < this.x ||
-            rec.y > this.y + this.height ||
-            rec.y + rec.height < this.y);
+        /*return !(rec.x > this.x + this.width ||
+           rec.x + rec.width < this.x ||
+           rec.y > this.y + this.height ||
+           rec.y + rec.height < this.y);*/
+        let rtn = { collided: false, direction: ColliderDirection.NONE };
+        let w = 0.5 * (this.width + rec.width);
+        let h = 0.5 * (this.height + rec.height);
+        let dx = ((this.x + (this.width / 2)) - (rec.x + (rec.width / 2)));
+        let dy = ((this.y + (this.height / 2)) - (rec.y + (rec.height / 2)));
+        if (Math.abs(dx) <= w && Math.abs(dy) <= h) {
+            let wy = w * dy;
+            let hx = h * dx;
+            if (wy > hx) {
+                if (wy > -hx)
+                    rtn = { collided: true, direction: ColliderDirection.TOP };
+                else
+                    rtn = { collided: true, direction: ColliderDirection.LEFT };
+            }
+            else {
+                if (wy > -hx)
+                    rtn = { collided: true, direction: ColliderDirection.RIGHT };
+                else
+                    rtn = { collided: true, direction: ColliderDirection.BOTTOM };
+            }
+        }
+        return rtn;
     }
     draw(ctx) {
         ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -192,7 +226,7 @@ class GameObject {
             }
         }
     }
-    collided(go) {
+    collided(co) {
     }
     colliderType() {
         return this.collider.type;
@@ -261,8 +295,9 @@ class Scene {
             for (let j = 0; j < this.goHasCollider.length; j++) {
                 if (i == j)
                     continue;
-                if (this.goHasCollider[i].isColliding(this.goHasCollider[j])) {
-                    this.goHasCollider[i].collided(this.goHasCollider[j]);
+                let col = this.goHasCollider[i].isColliding(this.goHasCollider[j]);
+                if (col.collided) {
+                    this.goHasCollider[i].collided({ object: this.goHasCollider[j], direction: col.direction });
                 }
             }
         }
@@ -312,6 +347,7 @@ class Wall extends GameObject {
         ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
     }
 }
+/// <reference path="Wall.ts" />
 class SpriteObject extends GameObject {
     constructor(position, width, height, frameWidth, frameHeight, img, needsInput = false, collider = false, hasGravity = false, canMove = false, type = E_COLLIDER_TYPES.PROP) {
         super(position, width, height, needsInput, collider, hasGravity, canMove, type);
@@ -461,12 +497,12 @@ class Knightsalot extends SpriteObject {
             this.position.x = 0;
         super.update();
     }
-    collided(go) {
-        if (go.colliderType() == E_COLLIDER_TYPES.GROUND) {
+    collided(co) {
+        if (co.object.colliderType() == E_COLLIDER_TYPES.GROUND) {
             this.grounded = true;
-            this.position.y = go.position.y - this.collider.height;
+            this.position.y = co.object.position.y - this.collider.height;
         }
-        super.collided(go);
+        super.collided(co);
     }
     onKeyDown(event) {
         switch (event.keyCode) {
@@ -549,12 +585,15 @@ class Puss extends SpriteObject {
             this.position.x = 0;
         super.update();
     }
-    collided(go) {
-        if (go.colliderType() == E_COLLIDER_TYPES.GROUND) {
-            this.grounded = true;
-            this.position.y = go.position.y - this.collider.height;
+    collided(co) {
+        if (co.object.colliderType() == E_COLLIDER_TYPES.GROUND) {
+            console.log(co.direction);
+            if (co.direction == ColliderDirection.BOTTOM) {
+                this.grounded = true;
+                this.position.y = co.object.position.y - this.collider.height;
+            }
         }
-        super.collided(go);
+        super.collided(co);
     }
     onKeyDown(event) {
         switch (event.keyCode) {

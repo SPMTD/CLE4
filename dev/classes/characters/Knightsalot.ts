@@ -56,15 +56,15 @@ class Knightsalot extends SpriteObject
         super.update();
     }   
 
-    public collided(go:GameObject)
+    public collided(co:CollidedReturnObject)
     {
-        if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
+        if(co.object.colliderType() == E_COLLIDER_TYPES.GROUND)
         {
             this.grounded = true;   
-            this.position.y = go.position.y - this.collider.height;
+            this.position.y = co.object.position.y - this.collider.height;
         }
 
-        super.collided(go);
+        super.collided(co);
     }
 
     public onKeyDown(event:KeyboardEvent) :void 
