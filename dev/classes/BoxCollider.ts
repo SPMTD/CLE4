@@ -43,20 +43,17 @@ class BoxCollider {
 
     public hitsOtherCollider(rec: BoxCollider): ColliderReturnObject 
     {
-        /*return !(rec.x > this.x + this.width || 
-           rec.x + rec.width < this.x || 
-           rec.y > this.y + this.height ||
-           rec.y + rec.height < this.y);*/
-           
         let rtn = {collided:false, direction:ColliderDirection.NONE};
 
         let w = 0.5 * (this.width + rec.width);
         let h = 0.5 * (this.height + rec.height);
+
         let dx = ((this.x + (this.width / 2)) - (rec.x + (rec.width / 2)));
         let dy = ((this.y + (this.height / 2)) - (rec.y + (rec.height / 2)));
 
         if(Math.abs(dx) <= w && Math.abs(dy) <= h)
         {
+            //console.log("x: " + this.x + " y: " + this.y + " w: " + this.width + " h: " + this.height);
             let wy = w * dy;
             let hx = h * dx;
 
@@ -65,12 +62,12 @@ class BoxCollider {
                 if(wy > -hx)
                     rtn = {collided:true, direction:ColliderDirection.TOP};
                 else
-                    rtn = {collided:true, direction:ColliderDirection.LEFT}; 
+                    rtn = {collided:true, direction:ColliderDirection.RIGHT}; 
             }
             else
             {
                 if(wy > -hx)
-                    rtn = {collided:true, direction:ColliderDirection.RIGHT};
+                    rtn = {collided:true, direction:ColliderDirection.LEFT};
                 else
                     rtn = {collided:true, direction:ColliderDirection.BOTTOM};
             }

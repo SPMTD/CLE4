@@ -15,7 +15,7 @@ class GameObject
     public width:number;
     public height:number;
     public needsInput:Boolean;
-    protected collider: BoxCollider;
+    public collider: BoxCollider;
     public hasCollider:Boolean;
     public hasCollided:Boolean;
     public hasGravity:Boolean;
@@ -120,11 +120,6 @@ class GameObject
     
     public collided(co:CollidedReturnObject)
     {
-        /*if(go.colliderType() == E_COLLIDER_TYPES.GROUND)
-        {
-            this.grounded = true;   
-            this.position.y = go.position.y - this.collider.height;
-        }*/
     }
 
     public colliderType() : E_COLLIDER_TYPES

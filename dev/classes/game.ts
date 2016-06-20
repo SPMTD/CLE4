@@ -13,7 +13,7 @@ enum TILED_LAYERS
 enum E_COLLIDER_TYPES
 {
     GROUND,
-    CHARACTER,
+    PLAYER,
     PROP
 }
 
@@ -37,7 +37,7 @@ class Game
     public static height:number = 540;
     public static gravity:number = 5;
     public static MS_UPDATE_LAG:number = 33; // 30 fps.
-    public static DEBUG:Boolean = true;
+    public static DEBUG:Boolean = false;
 
     private elapsedTime:number = 0;
     private updateLag:number = 0;
@@ -145,7 +145,7 @@ class Game
         switch(str)
         {
             case "character":
-                type = E_COLLIDER_TYPES.CHARACTER;
+                type = E_COLLIDER_TYPES.PLAYER;
             break;
             case "ground":
                 type = E_COLLIDER_TYPES.GROUND;

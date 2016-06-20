@@ -8,13 +8,14 @@ class Knightsalot extends SpriteObject
     
     constructor(position:Vector2, width:number, height:number, speed:number) 
     {
-        super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.CHARACTER);
+        super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.PLAYER);
         this.speed = 0.70;
         this.maxHorSpeed = 4;
         this.drag = 0.2;
         this.animationSpeed = 10;
         this.collider.width = 30;
         this.collider.height = 43;
+        this.collider.offset = new Vector2(10, 0);
         
         this.jumpSpeed = 0.75;  
     }
@@ -58,10 +59,32 @@ class Knightsalot extends SpriteObject
 
     public collided(co:CollidedReturnObject)
     {
-        if(co.object.colliderType() == E_COLLIDER_TYPES.GROUND)
+        switch(co.object.colliderType())
         {
-            this.grounded = true;   
-            this.position.y = co.object.position.y - this.collider.height;
+            case E_COLLIDER_TYPES.GROUND: case E_COLLIDER_TYPES.PROP:
+                switch(co.direction)
+                {
+                    case ColliderDirection.BOTTOM:
+                        this.grounded = true;   
+                        this.position.y = co.object.position.y - this.collider.height;
+                    break;
+                        case ColliderDirection.TOP:
+                        this.position.y = co.object.position.y + co.object.collider.height;
+                    break;
+                        case ColliderDirection.RIGHT:
+                        this.position.x = co.object.position.x - (this.collider.width + 10);
+                    break;
+                        case ColliderDirection.LEFT:
+                        this.position.x = co.object.position.x + (co.object.collider.width - 10);
+                    break;
+                }
+            break;
+            case E_COLLIDER_TYPES.PLAYER:
+                if(ColliderDirection.BOTTOM)
+                {
+                    //this.grounded = true;   
+                    //this.position.y = co.object.position.y - this.collider.height;
+                }
         }
 
         super.collided(co);

@@ -11,7 +11,7 @@ var TILED_LAYERS;
 var E_COLLIDER_TYPES;
 (function (E_COLLIDER_TYPES) {
     E_COLLIDER_TYPES[E_COLLIDER_TYPES["GROUND"] = 0] = "GROUND";
-    E_COLLIDER_TYPES[E_COLLIDER_TYPES["CHARACTER"] = 1] = "CHARACTER";
+    E_COLLIDER_TYPES[E_COLLIDER_TYPES["PLAYER"] = 1] = "PLAYER";
     E_COLLIDER_TYPES[E_COLLIDER_TYPES["PROP"] = 2] = "PROP";
 })(E_COLLIDER_TYPES || (E_COLLIDER_TYPES = {}));
 var ColliderDirection;
@@ -90,7 +90,7 @@ class Game {
         let type = E_COLLIDER_TYPES.PROP;
         switch (str) {
             case "character":
-                type = E_COLLIDER_TYPES.CHARACTER;
+                type = E_COLLIDER_TYPES.PLAYER;
                 break;
             case "ground":
                 type = E_COLLIDER_TYPES.GROUND;
@@ -106,14 +106,10 @@ Game.width = 960;
 Game.height = 540;
 Game.gravity = 5;
 Game.MS_UPDATE_LAG = 33;
-Game.DEBUG = true;
-/// <reference path="classes/game.ts" />
+Game.DEBUG = false;
 window.addEventListener("load", function () {
     new Game();
 });
-/**
- * BoxCollider
- */
 class BoxCollider {
     constructor(x, y, w, h, type, offset = Vector2.zero) {
         this.x = x;
@@ -129,10 +125,6 @@ class BoxCollider {
         return Math.abs(differencex) < this.width / 2 && Math.abs(differencey) < this.height / 2;
     }
     hitsOtherCollider(rec) {
-        /*return !(rec.x > this.x + this.width ||
-           rec.x + rec.width < this.x ||
-           rec.y > this.y + this.height ||
-           rec.y + rec.height < this.y);*/
         let rtn = { collided: false, direction: ColliderDirection.NONE };
         let w = 0.5 * (this.width + rec.width);
         let h = 0.5 * (this.height + rec.height);
@@ -145,11 +137,11 @@ class BoxCollider {
                 if (wy > -hx)
                     rtn = { collided: true, direction: ColliderDirection.TOP };
                 else
-                    rtn = { collided: true, direction: ColliderDirection.LEFT };
+                    rtn = { collided: true, direction: ColliderDirection.RIGHT };
             }
             else {
                 if (wy > -hx)
-                    rtn = { collided: true, direction: ColliderDirection.RIGHT };
+                    rtn = { collided: true, direction: ColliderDirection.LEFT };
                 else
                     rtn = { collided: true, direction: ColliderDirection.BOTTOM };
             }
@@ -347,7 +339,6 @@ class Wall extends GameObject {
         ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
     }
 }
-/// <reference path="Wall.ts" />
 class SpriteObject extends GameObject {
     constructor(position, width, height, frameWidth, frameHeight, img, needsInput = false, collider = false, hasGravity = false, canMove = false, type = E_COLLIDER_TYPES.PROP) {
         super(position, width, height, needsInput, collider, hasGravity, canMove, type);
@@ -456,7 +447,7 @@ class Vector2 {
 Vector2.zero = new Vector2(0, 0);
 class Knightsalot extends SpriteObject {
     constructor(position, width, height, speed) {
-        super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.CHARACTER);
+        super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.PLAYER);
         this.jumping = false;
         this.jumpCount = 0;
         this.jumpSpeed = 0;
@@ -468,6 +459,7 @@ class Knightsalot extends SpriteObject {
         this.animationSpeed = 10;
         this.collider.width = 30;
         this.collider.height = 43;
+        this.collider.offset = new Vector2(10, 0);
         this.jumpSpeed = 0.75;
     }
     update() {
@@ -498,9 +490,28 @@ class Knightsalot extends SpriteObject {
         super.update();
     }
     collided(co) {
-        if (co.object.colliderType() == E_COLLIDER_TYPES.GROUND) {
-            this.grounded = true;
-            this.position.y = co.object.position.y - this.collider.height;
+        switch (co.object.colliderType()) {
+            case E_COLLIDER_TYPES.GROUND:
+            case E_COLLIDER_TYPES.PROP:
+                switch (co.direction) {
+                    case ColliderDirection.BOTTOM:
+                        this.grounded = true;
+                        this.position.y = co.object.position.y - this.collider.height;
+                        break;
+                    case ColliderDirection.TOP:
+                        this.position.y = co.object.position.y + co.object.collider.height;
+                        break;
+                    case ColliderDirection.RIGHT:
+                        this.position.x = co.object.position.x - (this.collider.width + 10);
+                        break;
+                    case ColliderDirection.LEFT:
+                        this.position.x = co.object.position.x + (co.object.collider.width - 10);
+                        break;
+                }
+                break;
+            case E_COLLIDER_TYPES.PLAYER:
+                if (ColliderDirection.BOTTOM) {
+                }
         }
         super.collided(co);
     }
@@ -543,14 +554,14 @@ class Knightsalot extends SpriteObject {
 }
 class Puss extends SpriteObject {
     constructor(position, width, height, speed) {
-        super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.CHARACTER);
+        super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.PLAYER);
         this.jumping = false;
         this.jumpCount = 0;
         this.jumpSpeed = 0;
-        this.maxJumpHeight = 125;
+        this.maxJumpHeight = 12;
         this.jumpHeight = 0;
         this.speed = 0.75;
-        this.maxHorSpeed = 5;
+        this.maxHorSpeed = 7;
         this.drag = 0.15;
         this.animationSpeed = 10;
         this.collider.width = 30;
@@ -571,8 +582,8 @@ class Puss extends SpriteObject {
             if (this.jumpHeight <= this.maxJumpHeight) {
                 let vel = (Game.gravity + this.jumpSpeed);
                 this.velocity.y = -vel;
-                this.jumpHeight += vel;
-                this.jumpSpeed -= 0.01;
+                this.jumpHeight++;
+                this.jumpSpeed -= 0.3;
             }
             else {
                 this.velocity.y = 0;
@@ -586,12 +597,28 @@ class Puss extends SpriteObject {
         super.update();
     }
     collided(co) {
-        if (co.object.colliderType() == E_COLLIDER_TYPES.GROUND) {
-            console.log(co.direction);
-            if (co.direction == ColliderDirection.BOTTOM) {
-                this.grounded = true;
-                this.position.y = co.object.position.y - this.collider.height;
-            }
+        switch (co.object.colliderType()) {
+            case E_COLLIDER_TYPES.GROUND:
+            case E_COLLIDER_TYPES.PROP:
+                switch (co.direction) {
+                    case ColliderDirection.BOTTOM:
+                        this.grounded = true;
+                        this.position.y = co.object.position.y - this.collider.height;
+                        break;
+                    case ColliderDirection.TOP:
+                        this.position.y = co.object.position.y + co.object.collider.height;
+                        break;
+                    case ColliderDirection.RIGHT:
+                        this.position.x = co.object.position.x - (this.collider.width + 10);
+                        break;
+                    case ColliderDirection.LEFT:
+                        this.position.x = co.object.position.x + (co.object.collider.width - 10);
+                        break;
+                }
+                break;
+            case E_COLLIDER_TYPES.PLAYER:
+                if (ColliderDirection.BOTTOM) {
+                }
         }
         super.collided(co);
     }
