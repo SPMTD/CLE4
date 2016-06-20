@@ -104,7 +104,7 @@ class Game {
 }
 Game.width = 960;
 Game.height = 540;
-Game.gravity = 5;
+Game.gravity = 3;
 Game.MS_UPDATE_LAG = 33;
 Game.DEBUG = false;
 window.addEventListener("load", function () {
@@ -453,9 +453,9 @@ class Knightsalot extends SpriteObject {
         this.jumpSpeed = 0;
         this.maxJumpHeight = 75;
         this.jumpHeight = 0;
-        this.speed = 0.70;
-        this.maxHorSpeed = 4;
-        this.drag = 0.2;
+        this.speed = 0.9;
+        this.maxHorSpeed = 5;
+        this.drag = 0.3;
         this.animationSpeed = 10;
         this.collider.width = 30;
         this.collider.height = 43;
@@ -558,16 +558,17 @@ class Puss extends SpriteObject {
         this.jumping = false;
         this.jumpCount = 0;
         this.jumpSpeed = 0;
-        this.maxJumpHeight = 12;
+        this.maxJumpHeight = 0;
         this.jumpHeight = 0;
-        this.speed = 0.75;
-        this.maxHorSpeed = 7;
-        this.drag = 0.15;
+        this.speed = 2;
+        this.maxHorSpeed = 10;
+        this.maxJumpHeight = 10;
+        this.drag = 0.3;
         this.animationSpeed = 10;
         this.collider.width = 30;
         this.collider.height = 43;
         this.collider.offset = new Vector2(10, 0);
-        this.jumpSpeed = 0.75;
+        this.jumpSpeed = 2;
     }
     update() {
         if (this.direction.y == -1 && this.grounded) {
@@ -579,11 +580,11 @@ class Puss extends SpriteObject {
             this.grounded = false;
         }
         if (this.jumping) {
-            if (this.jumpHeight <= this.maxJumpHeight) {
+            if (this.jumpHeight <= this.maxJumpHeight && this.jumpSpeed > 0) {
                 let vel = (Game.gravity + this.jumpSpeed);
                 this.velocity.y = -vel;
                 this.jumpHeight++;
-                this.jumpSpeed -= 0.3;
+                this.jumpSpeed -= 0.2;
             }
             else {
                 this.velocity.y = 0;
@@ -606,6 +607,7 @@ class Puss extends SpriteObject {
                         this.position.y = co.object.position.y - this.collider.height;
                         break;
                     case ColliderDirection.TOP:
+                        this.jumping = false;
                         this.position.y = co.object.position.y + co.object.collider.height;
                         break;
                     case ColliderDirection.RIGHT:

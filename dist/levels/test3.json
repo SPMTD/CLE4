@@ -36,7 +36,7 @@
                  "visible":true,
                  "width":86,
                  "x":366,
-                 "y":380
+                 "y":382
                 }, 
                 {
                  "height":32,
@@ -67,9 +67,9 @@
                  "rotation":0,
                  "type":"ground",
                  "visible":true,
-                 "width":86,
-                 "x":463,
-                 "y":323
+                 "width":81,
+                 "x":462,
+                 "y":320
                 }, 
                 {
                  "height":18,
@@ -80,7 +80,7 @@
                  "visible":true,
                  "width":86,
                  "x":301,
-                 "y":285
+                 "y":287
                 }, 
                 {
                  "height":14,
@@ -91,7 +91,7 @@
                  "visible":true,
                  "width":86,
                  "x":209,
-                 "y":222
+                 "y":223
                 }, 
                 {
                  "height":18,
@@ -102,7 +102,7 @@
                  "visible":true,
                  "width":86,
                  "x":336,
-                 "y":158
+                 "y":159
                 }, 
                 {
                  "height":18,
@@ -113,7 +113,7 @@
                  "visible":true,
                  "width":86,
                  "x":238,
-                 "y":95
+                 "y":96
                 }, 
                 {
                  "height":32,

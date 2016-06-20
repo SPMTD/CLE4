@@ -26,14 +26,14 @@
  </layer>
  <objectgroup name="Colliders">
   <object id="2" type="ground" x="-400" y="446" width="2000" height="64"/>
-  <object id="3" type="ground" x="366" y="380" width="86" height="32"/>
+  <object id="3" type="ground" x="366" y="382" width="86" height="42"/>
   <object id="11" type="prop" x="639" y="413" width="18" height="32"/>
   <object id="18" type="ground" x="236" y="414" width="86" height="32"/>
-  <object id="19" type="ground" x="463" y="323" width="86" height="19"/>
-  <object id="20" type="ground" x="301" y="285" width="86" height="18"/>
-  <object id="21" type="ground" x="209" y="222" width="86" height="14"/>
-  <object id="22" type="ground" x="336" y="158" width="86" height="18"/>
-  <object id="23" type="ground" x="238" y="95" width="86" height="18"/>
+  <object id="19" type="ground" x="462" y="320" width="81" height="19"/>
+  <object id="20" type="ground" x="301" y="287" width="86" height="18"/>
+  <object id="21" type="ground" x="209" y="223" width="86" height="14"/>
+  <object id="22" type="ground" x="336" y="159" width="86" height="18"/>
+  <object id="23" type="ground" x="238" y="96" width="86" height="18"/>
   <object id="24" type="ground" x="109" y="126" width="86" height="32"/>
  </objectgroup>
 </map>

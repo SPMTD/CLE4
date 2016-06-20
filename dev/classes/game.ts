@@ -35,7 +35,7 @@ class Game
     
     public static width:number = 960;
     public static height:number = 540;
-    public static gravity:number = 5;
+    public static gravity:number = 3;
     public static MS_UPDATE_LAG:number = 33; // 30 fps.
     public static DEBUG:Boolean = false;
 

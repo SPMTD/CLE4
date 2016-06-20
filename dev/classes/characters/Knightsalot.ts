@@ -9,9 +9,9 @@ class Knightsalot extends SpriteObject
     constructor(position:Vector2, width:number, height:number, speed:number) 
     {
         super(position, width, height, 57, 57, 'spriteTest', true, true, true, true, E_COLLIDER_TYPES.PLAYER);
-        this.speed = 0.70;
-        this.maxHorSpeed = 4;
-        this.drag = 0.2;
+        this.speed = 0.9;
+        this.maxHorSpeed = 5;
+        this.drag = 0.3;
         this.animationSpeed = 10;
         this.collider.width = 30;
         this.collider.height = 43;
