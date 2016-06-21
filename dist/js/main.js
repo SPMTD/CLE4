@@ -1,7 +1,8 @@
 var E_SCENES;
 (function (E_SCENES) {
-    E_SCENES[E_SCENES["SPLASH_SCREEN"] = 0] = "SPLASH_SCREEN";
-    E_SCENES[E_SCENES["MENU_SCREEN"] = 1] = "MENU_SCREEN";
+    E_SCENES[E_SCENES["MENU_SCENE"] = 0] = "MENU_SCENE";
+    E_SCENES[E_SCENES["LEVEL1_SCENE"] = 1] = "LEVEL1_SCENE";
+    E_SCENES[E_SCENES["GAME_OVER_SCENE"] = 2] = "GAME_OVER_SCENE";
 })(E_SCENES || (E_SCENES = {}));
 var TILED_LAYERS;
 (function (TILED_LAYERS) {
@@ -13,6 +14,7 @@ var E_COLLIDER_TYPES;
     E_COLLIDER_TYPES[E_COLLIDER_TYPES["GROUND"] = 0] = "GROUND";
     E_COLLIDER_TYPES[E_COLLIDER_TYPES["PLAYER"] = 1] = "PLAYER";
     E_COLLIDER_TYPES[E_COLLIDER_TYPES["PROP"] = 2] = "PROP";
+    E_COLLIDER_TYPES[E_COLLIDER_TYPES["TRIGGER"] = 3] = "TRIGGER";
 })(E_COLLIDER_TYPES || (E_COLLIDER_TYPES = {}));
 var ColliderDirection;
 (function (ColliderDirection) {
@@ -35,22 +37,26 @@ class Game {
         this.date = new Date();
         this.audio = document.getElementsByTagName("audio")[0];
         this.context = this.canvas.getContext('2d');
-        this.activateScene(E_SCENES.SPLASH_SCREEN);
         window.addEventListener("keydown", (e) => this.onKeyDown(e));
         window.addEventListener("keyup", (e) => this.onKeyUp(e));
         this.currentTime = this.date.getTime();
         this.previousTime = this.currentTime;
         console.log(this.currentTime);
-        this.persistentGOs.push(new TextObject(new Vector2(10, 20), 50, 50, "FPS: ", 14, 100, 0, 0));
+        this.persistentGOs.push(new TextObject(new Vector2(10, 20), 50, 50, "FPS: ", 14, new Color(100, 0, 0)));
+        this.activateScene(E_SCENES.MENU_SCENE);
         requestAnimationFrame(() => this.update());
     }
     activateScene(scene) {
+        this.activeScene = null;
         switch (scene) {
-            case E_SCENES.SPLASH_SCREEN:
-                this.activeScene = new SplashScene();
+            case E_SCENES.MENU_SCENE:
+                this.activeScene = new MenuScene(this);
                 break;
-            case E_SCENES.MENU_SCREEN:
-                this.activeScene = new SplashScene();
+            case E_SCENES.LEVEL1_SCENE:
+                this.activeScene = new Level1Scene(this);
+                break;
+            case E_SCENES.GAME_OVER_SCENE:
+                this.activeScene = new GameOverScene(this);
                 break;
         }
     }
@@ -98,6 +104,9 @@ class Game {
             case "prop":
                 type = E_COLLIDER_TYPES.PROP;
                 break;
+            case "trigger":
+                type = E_COLLIDER_TYPES.TRIGGER;
+                break;
         }
         return type;
     }
@@ -107,55 +116,6 @@ Game.height = 540;
 Game.gravity = 3;
 Game.MS_UPDATE_LAG = 33;
 Game.DEBUG = false;
-window.addEventListener("load", function () {
-    new Game();
-});
-class BoxCollider {
-    constructor(x, y, w, h, type, offset = Vector2.zero) {
-        this.x = x;
-        this.y = y;
-        this.width = w;
-        this.height = h;
-        this.type = type;
-        this.offset = offset;
-    }
-    hitsPoint(posx, posy) {
-        var differencex = this.x - posx;
-        var differencey = this.y - posy;
-        return Math.abs(differencex) < this.width / 2 && Math.abs(differencey) < this.height / 2;
-    }
-    hitsOtherCollider(rec) {
-        let rtn = { collided: false, direction: ColliderDirection.NONE };
-        let w = 0.5 * (this.width + rec.width);
-        let h = 0.5 * (this.height + rec.height);
-        let dx = ((this.x + (this.width / 2)) - (rec.x + (rec.width / 2)));
-        let dy = ((this.y + (this.height / 2)) - (rec.y + (rec.height / 2)));
-        if (Math.abs(dx) <= w && Math.abs(dy) <= h) {
-            let wy = w * dy;
-            let hx = h * dx;
-            if (wy > hx) {
-                if (wy > -hx)
-                    rtn = { collided: true, direction: ColliderDirection.TOP };
-                else
-                    rtn = { collided: true, direction: ColliderDirection.RIGHT };
-            }
-            else {
-                if (wy > -hx)
-                    rtn = { collided: true, direction: ColliderDirection.LEFT };
-                else
-                    rtn = { collided: true, direction: ColliderDirection.BOTTOM };
-            }
-        }
-        return rtn;
-    }
-    draw(ctx) {
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
-    updatePosition(pos) {
-        this.x = pos.x + this.offset.x;
-        this.y = pos.y + this.offset.y;
-    }
-}
 class GameObject {
     constructor(position, width, height, needsInput = false, collider = false, hasGravity = false, canMove = false, type = E_COLLIDER_TYPES.PROP) {
         this.maxHorSpeed = 5;
@@ -171,7 +131,6 @@ class GameObject {
         this.oldPosition = position;
         this.hasGravity = hasGravity;
         this.canMove = canMove;
-        this.rnd = Math.random();
         this.needsInput = needsInput;
         this.hasCollider = collider;
         this.direction = new Vector2(0, 0);
@@ -230,52 +189,83 @@ class GameObject {
     onKeyDown(event) { }
     onKeyUp(event) { }
 }
-class Level {
-    constructor() {
+class LiftObject extends GameObject {
+    constructor(position, width, height, collider = true) {
+        super(position, width, height, false, collider, false, true);
+        this.sprite = new Image(this.width, this.height);
+        this.sprite.src = 'images/wall.png';
+        this.active = false;
+        this.targetY = 50;
+        this.startY = 390;
+        this.speed = 5;
+        this.up = true;
     }
-}
-class LevelLoader {
-    constructor() {
-        this.path = 'levels/';
-        this.level = Array();
-        this.rowLength = 0;
-        this.levelToDraw = false;
-    }
-    load(name, cb) {
-        console.log("Loading: " + name);
-        let goList = [];
-        $.getJSON(this.path + name + ".json", (data, textStatus, jqXHR) => {
-            let layer = TILED_LAYERS.TILE_LAYER;
-            this.level = data.layers[layer].data;
-            this.rowLength = data.layers[layer].width;
-            this.tileWidth = data.tilesets[layer].tilewidth;
-            this.tileHeight = data.tilesets[layer].tileheight;
-            this.tilesetColomns = data.tilesets[layer].columns + 1;
-            this.tilesetWidth = data.tilesets[layer].imagewidth;
-            this.tileSet = new Image(data.tilesets[layer].imageWidth, data.tilesets[layer].imageHeight);
-            this.tileSet.src = 'images/tileset.png';
-            this.levelToDraw = true;
-            for (let i = 0; i < this.level.length; i++) {
-                if (this.level[i] != 0) {
-                    let indice = this.level[i] - 1;
-                    goList.push(new Tile(new Vector2((i % this.tilesetColomns) * this.tileWidth, Math.floor(i / this.tilesetColomns) * this.tileHeight), this.tileWidth, this.tileHeight, this.tileSet, (indice % (this.tilesetWidth / this.tileWidth)) * this.tileWidth, Math.floor(indice / (this.tilesetWidth / this.tileHeight)) * this.tileHeight));
+    update() {
+        if (this.active) {
+            if (!this.up) {
+                this.velocity.y += this.speed;
+                if (this.position.y >= this.startY) {
+                    this.velocity.y = 0;
+                    this.active = false;
                 }
             }
-            layer = TILED_LAYERS.COLLISION_LAYER;
-            let collisionData = data.layers[layer].objects;
-            for (let i = 0; i < collisionData.length; i++) {
-                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true, false, false, Game.colliderStringToType(collisionData[i].type)));
-            }
-            console.log(name + " loaded");
-            cb(goList);
-        });
+            if (this.position.y > this.targetY && this.up)
+                this.velocity.y -= this.speed;
+            else
+                this.up = false;
+        }
+        super.update();
+    }
+    activate() {
+        this.up = true;
+        this.active = true;
+    }
+    draw(ctx) {
+        ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
+    }
+}
+class BridgeObject extends GameObject {
+    constructor(position, width, height, targetY, speed, collider = true) {
+        super(position, width, height, false, collider, false, true);
+        this.sprite = new Image(this.width, this.height);
+        this.sprite.src = 'images/wall.png';
+        this.active = false;
+        this.targetY = targetY;
+        this.speed = speed;
+    }
+    update() {
+        if (this.active) {
+            if (this.position.y < this.targetY)
+                this.velocity.y += this.speed;
+            else
+                this.active = false;
+        }
+        super.update();
+    }
+    activate() {
+        this.up = true;
+        this.active = true;
+    }
+    draw(ctx) {
+        ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
+    }
+}
+class Trigger extends GameObject {
+    constructor(position, width, height, name, scene) {
+        super(position, width, height, false, true, false, false, E_COLLIDER_TYPES.TRIGGER);
+        this.triggerName = name;
+        this.scene = scene;
+    }
+    activate() {
+        this.scene.triggerActivated(this.triggerName);
     }
 }
 class Scene {
-    constructor() {
+    constructor(game) {
         this.gameObjects = [];
         this.goNeedInput = [];
         this.goHasCollider = [];
+        this.game = game;
         this.init();
     }
     init() {
@@ -325,10 +315,162 @@ class Scene {
             }
         }
     }
+    triggerActivated(name) {
+    }
+}
+class GameOverScene extends Scene {
+    init() {
+        super.init();
+        this.gameObjects.push(new FadeText(new Vector2(Game.width / 2 - 75, Game.height / 2 - 100), 150, 50, "Goed gedaan!", 24, new Color(255, 255, 255), 0.25, 1.0, 0.5));
+        this.gameObjects.push(new TextObject(new Vector2(Game.width / 2 - 250, Game.height / 2), 500, 50, "Je hebt goed samengewerkt en de game uitgespeeld.", 24, new Color(0, 0, 0)));
+    }
+    onKeyDown(event) {
+        if (event.keyCode == 27)
+            this.game.activateScene(E_SCENES.MENU_SCENE);
+    }
+    update() {
+        super.update();
+    }
+    draw(ctx) {
+        super.draw(ctx);
+    }
+}
+/// <reference path="classes/game.ts" />
+/// <reference path="classes/GameObject.ts" />
+/// <reference path="classes/LiftObject.ts" />
+/// <reference path="classes/BridgeObject.ts" />
+/// <reference path="classes/Trigger.ts" />
+/// <reference path="classes/Scene.ts" />
+/// <reference path="classes/scenes/GameOverScene.ts" />
+window.addEventListener("load", function () {
+    new Game();
+});
+/**
+ * BoxCollider
+ */
+class BoxCollider {
+    constructor(x, y, w, h, type, offset = Vector2.zero) {
+        this.x = x;
+        this.y = y;
+        this.width = w;
+        this.height = h;
+        this.type = type;
+        this.offset = offset;
+    }
+    hitsPoint(posx, posy) {
+        var differencex = this.x - posx;
+        var differencey = this.y - posy;
+        return Math.abs(differencex) < this.width / 2 && Math.abs(differencey) < this.height / 2;
+    }
+    hitsOtherCollider(rec) {
+        let rtn = { collided: false, direction: ColliderDirection.NONE };
+        let w = 0.5 * (this.width + rec.width);
+        let h = 0.5 * (this.height + rec.height);
+        let dx = ((this.x + (this.width / 2)) - (rec.x + (rec.width / 2)));
+        let dy = ((this.y + (this.height / 2)) - (rec.y + (rec.height / 2)));
+        if (Math.abs(dx) <= w && Math.abs(dy) <= h) {
+            let wy = w * dy;
+            let hx = h * dx;
+            if (wy > hx) {
+                if (wy > -hx)
+                    rtn = { collided: true, direction: ColliderDirection.TOP };
+                else
+                    rtn = { collided: true, direction: ColliderDirection.RIGHT };
+            }
+            else {
+                if (wy > -hx)
+                    rtn = { collided: true, direction: ColliderDirection.LEFT };
+                else
+                    rtn = { collided: true, direction: ColliderDirection.BOTTOM };
+            }
+        }
+        return rtn;
+    }
+    draw(ctx) {
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    updatePosition(pos) {
+        this.x = pos.x + this.offset.x;
+        this.y = pos.y + this.offset.y;
+    }
+}
+class ButtonObject extends GameObject {
+    constructor(position, width, height, text, size, color) {
+        super(position, width, height, false, false);
+        this.text = text;
+        this.size = size;
+        this.color = color;
+    }
+    update() {
+    }
+    draw(ctx) {
+        ctx.fillStyle = this.color.colorString;
+        ctx.font = this.size + "px Arial";
+        ctx.fillText(this.text, this.position.x, this.position.y, this.width);
+    }
+}
+class Color {
+    constructor(r, g, b, a = 1) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+        this.cacheColorString();
+    }
+    cacheColorString() {
+        this.colorString = "rgba(" + this.r + "," + this.g + "," + this.b + "," + this.a + ")";
+    }
+}
+class Level {
+    constructor() {
+    }
+}
+class LevelLoader {
+    constructor() {
+        this.path = 'levels/';
+        this.level = Array();
+        this.rowLength = 0;
+        this.levelToDraw = false;
+    }
+    load(scene, name, cb) {
+        console.log("Loading: " + name);
+        let goList = [];
+        $.getJSON(this.path + name + ".json", (data, textStatus, jqXHR) => {
+            let layer = TILED_LAYERS.TILE_LAYER;
+            this.level = data.layers[layer].data;
+            this.rowLength = data.layers[layer].width;
+            this.tileWidth = data.tilesets[layer].tilewidth;
+            this.tileHeight = data.tilesets[layer].tileheight;
+            this.tilesetColomns = data.tilesets[layer].columns + 1;
+            this.tilesetWidth = data.tilesets[layer].imagewidth;
+            this.tileSet = new Image(data.tilesets[layer].imageWidth, data.tilesets[layer].imageHeight);
+            this.tileSet.src = 'images/tileset.png';
+            this.levelToDraw = true;
+            for (let i = 0; i < this.level.length; i++) {
+                if (this.level[i] != 0) {
+                    let indice = this.level[i] - 1;
+                    goList.push(new Tile(new Vector2((i % this.tilesetColomns) * this.tileWidth, Math.floor(i / this.tilesetColomns) * this.tileHeight), this.tileWidth, this.tileHeight, this.tileSet, (indice % (this.tilesetWidth / this.tileWidth)) * this.tileWidth, Math.floor(indice / (this.tilesetWidth / this.tileHeight)) * this.tileHeight));
+                }
+            }
+            layer = TILED_LAYERS.COLLISION_LAYER;
+            let collisionData = data.layers[layer].objects;
+            for (let c of collisionData) {
+                if (c.type == "trigger") {
+                    console.log('test');
+                    goList.push(new Trigger(new Vector2(c.x, c.y), c.width, c.height, c.name, scene));
+                }
+                else {
+                    goList.push(new GameObject(new Vector2(c.x, c.y), c.width, c.height, false, true, false, false, Game.colliderStringToType(c.type)));
+                }
+            }
+            console.log(name + " loaded");
+            cb(goList);
+        });
+    }
 }
 class Wall extends GameObject {
-    constructor(position, width, height, needsInput = false, collider = false) {
-        super(position, width, height, needsInput, collider);
+    constructor(position, width, height, collider = true) {
+        super(position, width, height, false, collider);
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/wall.png';
     }
@@ -339,6 +481,7 @@ class Wall extends GameObject {
         ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
     }
 }
+/// <reference path="Wall.ts" />
 class SpriteObject extends GameObject {
     constructor(position, width, height, frameWidth, frameHeight, img, needsInput = false, collider = false, hasGravity = false, canMove = false, type = E_COLLIDER_TYPES.PROP) {
         super(position, width, height, needsInput, collider, hasGravity, canMove, type);
@@ -375,26 +518,18 @@ class SpriteObject extends GameObject {
     }
 }
 class TextObject extends GameObject {
-    constructor(position, width, height, text, size, r, g, b, a = 1) {
+    constructor(position, width, height, text, size, color) {
         super(position, width, height, false, false);
-        this.color = [4];
         this.text = text;
         this.size = size;
-        this.color[0] = r;
-        this.color[1] = g;
-        this.color[2] = b;
-        this.color[3] = a;
-        this.cacheColorString();
+        this.color = color;
     }
     update() {
     }
     draw(ctx) {
-        ctx.fillStyle = this.textColor;
+        ctx.fillStyle = this.color.colorString;
         ctx.font = this.size + "px Arial";
         ctx.fillText(this.text, this.position.x, this.position.y, this.width);
-    }
-    cacheColorString() {
-        this.textColor = "rgba(" + this.color[0] + "," + this.color[1] + "," + this.color[2] + "," + this.color[3] + ")";
     }
 }
 class Tile extends GameObject {
@@ -509,6 +644,10 @@ class Knightsalot extends SpriteObject {
                         break;
                 }
                 break;
+            case E_COLLIDER_TYPES.TRIGGER:
+                {
+                    (co.object).activate();
+                }
             case E_COLLIDER_TYPES.PLAYER:
                 if (ColliderDirection.BOTTOM) {
                 }
@@ -565,9 +704,9 @@ class Puss extends SpriteObject {
         this.maxJumpHeight = 10;
         this.drag = 0.3;
         this.animationSpeed = 10;
-        this.collider.width = 30;
-        this.collider.height = 43;
-        this.collider.offset = new Vector2(10, 0);
+        this.collider.width = 20;
+        this.collider.height = 30;
+        this.collider.offset = new Vector2(6, 0);
         this.jumpSpeed = 2;
     }
     update() {
@@ -611,13 +750,17 @@ class Puss extends SpriteObject {
                         this.position.y = co.object.position.y + co.object.collider.height;
                         break;
                     case ColliderDirection.RIGHT:
-                        this.position.x = co.object.position.x - (this.collider.width + 10);
+                        this.position.x = co.object.position.x - (this.collider.width + 6);
                         break;
                     case ColliderDirection.LEFT:
-                        this.position.x = co.object.position.x + (co.object.collider.width - 10);
+                        this.position.x = co.object.position.x + (co.object.collider.width - 6);
                         break;
                 }
                 break;
+            case E_COLLIDER_TYPES.TRIGGER:
+                {
+                    (co.object).activate();
+                }
             case E_COLLIDER_TYPES.PLAYER:
                 if (ColliderDirection.BOTTOM) {
                 }
@@ -661,19 +804,59 @@ class Puss extends SpriteObject {
         }
     }
 }
-class SplashScene extends Scene {
+class Level1Scene extends Scene {
     init() {
         super.init();
-        this.gameObjects.push(new FadeText(new Vector2(Game.width / 2 - 50, Game.height / 2), 100, 50, "Welkom!", 24, 0, 100, 0, 0.25, 1.0, 0.5));
-        this.gameObjects.push(new Puss(new Vector2(0, 0), 50, 50, 0.75));
-        this.gameObjects.push(new Knightsalot(new Vector2(0, 0), 50, 50, 0.75));
+        this.gameObjects.push(new Knightsalot(new Vector2(64, Game.height - 150), 50, 50, 0.75));
+        this.gameObjects.push(new Puss(new Vector2(96, Game.height - 150), 35, 35, 0.75));
+        this.lift = new LiftObject(new Vector2(128, 390), 100, 25);
+        this.bridge = new BridgeObject(new Vector2(525, 70), 160, 25, 400, 5);
+        this.gate = new BridgeObject(new Vector2(Game.width - 25, 300), 25, 200, 450, 5);
+        this.gameObjects.push(this.lift);
+        this.gameObjects.push(this.bridge);
+        this.gameObjects.push(this.gate);
         this.level = new LevelLoader();
-        this.level.load("test3", (arr) => {
+        this.level.load(this, "test3", (arr) => {
             for (let i = 0; i < arr.length; i++) {
                 this.gameObjects.push(arr[i]);
             }
             super.processGameObjects();
         });
+    }
+    triggerActivated(name) {
+        switch (name) {
+            case "liftButton":
+                this.lift.activate();
+                break;
+            case "bridgeButton":
+                this.bridge.activate();
+                break;
+            case "gateButton":
+                this.gate.activate();
+                break;
+            case "fail":
+                this.game.activateScene(E_SCENES.LEVEL1_SCENE);
+                break;
+            case "success":
+                this.game.activateScene(E_SCENES.GAME_OVER_SCENE);
+                break;
+        }
+    }
+    update() {
+        super.update();
+    }
+    draw(ctx) {
+        super.draw(ctx);
+    }
+}
+class MenuScene extends Scene {
+    init() {
+        super.init();
+        this.gameObjects.push(new TextObject(new Vector2(Game.width / 2 - 50, 200), 100, 50, "Welkom!", 24, new Color(0, 100, 0)));
+        this.gameObjects.push(new FadeText(new Vector2(Game.width / 2 - 200, Game.height / 2), 400, 50, "Druk op een knop om te beginnen!", 24, new Color(255, 255, 255), 0.25, 1.0, 0.5));
+    }
+    onKeyDown(event) {
+        this.game.activateScene(E_SCENES.LEVEL1_SCENE);
     }
     update() {
         super.update();
@@ -683,8 +866,8 @@ class SplashScene extends Scene {
     }
 }
 class FadeText extends TextObject {
-    constructor(position, width, height, text, size, r, g, b, low, high, duration) {
-        super(position, width, height, text, size, r, g, b);
+    constructor(position, width, height, text, size, color, low, high, duration) {
+        super(position, width, height, text, size, color);
         this.lowAlpha = low;
         this.highAlpha = high;
         this.duration = duration;
@@ -694,18 +877,18 @@ class FadeText extends TextObject {
     }
     draw(ctx) {
         if (!this.revert) {
-            if (this.color[3] > this.lowAlpha)
-                this.color[3] -= this.duration / Game.MS_UPDATE_LAG;
+            if (this.color.a > this.lowAlpha)
+                this.color.a -= this.duration / Game.MS_UPDATE_LAG;
             else
                 this.revert = true;
         }
         else {
-            if (this.color[3] <= this.highAlpha)
-                this.color[3] += this.duration / Game.MS_UPDATE_LAG;
+            if (this.color.a <= this.highAlpha)
+                this.color.a += this.duration / Game.MS_UPDATE_LAG;
             else
                 this.revert = false;
         }
-        this.cacheColorString();
+        this.color.cacheColorString();
         super.draw(ctx);
     }
 }

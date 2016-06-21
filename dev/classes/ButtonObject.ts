@@ -1,4 +1,4 @@
-class TextObject extends GameObject
+class ButtonObject extends GameObject
 {
     public text:string;
     public size:number;

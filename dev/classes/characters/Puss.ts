@@ -14,9 +14,9 @@ class Puss extends SpriteObject
         this.maxJumpHeight = 10;
         this.drag = 0.3;
         this.animationSpeed = 10;
-        this.collider.width = 30;
-        this.collider.height = 43;
-        this.collider.offset = new Vector2(10, 0);
+        this.collider.width = 20;
+        this.collider.height = 30;
+        this.collider.offset = new Vector2(6, 0);
 
         this.jumpSpeed = 2;
     }
@@ -74,13 +74,17 @@ class Puss extends SpriteObject
                         this.position.y = co.object.position.y + co.object.collider.height;
                     break;
                         case ColliderDirection.RIGHT:
-                        this.position.x = co.object.position.x - (this.collider.width + 10);
+                        this.position.x = co.object.position.x - (this.collider.width + 6);
                     break;
                         case ColliderDirection.LEFT:
-                        this.position.x = co.object.position.x + (co.object.collider.width - 10);
+                        this.position.x = co.object.position.x + (co.object.collider.width - 6);
                     break;
                 }
             break;
+            case E_COLLIDER_TYPES.TRIGGER:
+            {
+                (<Trigger>(co.object)).activate();
+            }
             case E_COLLIDER_TYPES.PLAYER:
                 if(ColliderDirection.BOTTOM)
                 {

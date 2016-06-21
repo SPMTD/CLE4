@@ -2,15 +2,19 @@ class Scene
 {
     public gameObjects: GameObject[] = [];
     public goNeedInput: GameObject[] = []; // Array of GameObjects that require input events (reference stored).
-    public goHasCollider: GameObject[] = [] // Array of GameObjects that have a collider (and so should collide - reference stored).
+    public goHasCollider: GameObject[] = []; // Array of GameObjects that have a collider (and so should collide - reference stored).
     
-    constructor()
+    protected game:Game;
+    
+    constructor(game:Game)
     {
+        this.game = game;
         this.init();
     }
     
     public init() : void
     {
+
     }
     
     public destroy() : void
@@ -83,5 +87,9 @@ class Scene
                 this.goHasCollider.push(this.gameObjects[i]);
             }
         }
+    }
+    
+    public triggerActivated(name:string) : void
+    {
     }
 }

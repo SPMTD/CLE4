@@ -5,8 +5,8 @@ class Wall extends GameObject {
 
     public sprite:HTMLImageElement;
     
-    constructor(position: Vector2, width:number, height:number, needsInput:Boolean = false, collider:Boolean = false) {
-        super(position, width, height, needsInput, collider);
+    constructor(position: Vector2, width:number, height:number, collider:Boolean = true) {
+        super(position, width, height, false, collider);
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/wall.png';        
     }

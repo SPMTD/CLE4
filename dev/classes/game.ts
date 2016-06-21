@@ -1,7 +1,8 @@
 enum E_SCENES 
 {
-    SPLASH_SCREEN,
-    MENU_SCREEN
+    MENU_SCENE,
+    LEVEL1_SCENE,
+    GAME_OVER_SCENE
 }
 
 enum TILED_LAYERS
@@ -14,7 +15,8 @@ enum E_COLLIDER_TYPES
 {
     GROUND,
     PLAYER,
-    PROP
+    PROP,
+    TRIGGER
 }
 
 enum ColliderDirection
@@ -59,8 +61,6 @@ class Game
 
         this.context = this.canvas.getContext('2d');
         
-        this.activateScene(E_SCENES.SPLASH_SCREEN);
-        
         window.addEventListener("keydown", (e) => this.onKeyDown(e));
         window.addEventListener("keyup"  , (e) => this.onKeyUp(e));
 
@@ -68,20 +68,26 @@ class Game
         this.previousTime = this.currentTime;
         console.log(this.currentTime);
 
-        this.persistentGOs.push(new TextObject(new Vector2(10, 20), 50, 50, "FPS: ", 14, 100, 0, 0));
+        this.persistentGOs.push(new TextObject(new Vector2(10, 20), 50, 50, "FPS: ", 14, new Color(100, 0, 0)));
+
+        this.activateScene(E_SCENES.MENU_SCENE);
         
         requestAnimationFrame(() => this.update());    
     }
     
-    private activateScene(scene:E_SCENES)
+    public activateScene(scene:E_SCENES)
     {
+        this.activeScene = null;
         switch(scene)
         {
-            case E_SCENES.SPLASH_SCREEN:
-                this.activeScene = new SplashScene();
+            case E_SCENES.MENU_SCENE:
+                this.activeScene = new MenuScene(this);
             break;
-            case E_SCENES.MENU_SCREEN:
-                this.activeScene = new SplashScene();
+            case E_SCENES.LEVEL1_SCENE:
+                this.activeScene = new Level1Scene(this);
+            break;
+            case E_SCENES.GAME_OVER_SCENE:
+                this.activeScene = new GameOverScene(this);
             break;
         }
     }
@@ -95,6 +101,7 @@ class Game
 
         this.updateLag += this.elapsedTime;
 
+        // Update FPS display each second.
         if((this.currentTime - this.fpsTimer) >= 1000)
         {
             this.fpsTimer = this.currentTime;
@@ -152,6 +159,9 @@ class Game
             break;
             case "prop":
                 type = E_COLLIDER_TYPES.PROP;
+            break;
+            case "trigger":
+                type = E_COLLIDER_TYPES.TRIGGER;
             break;
         }
 

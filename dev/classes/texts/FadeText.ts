@@ -5,9 +5,9 @@ class FadeText extends TextObject
     private duration:number;
     private revert:Boolean;
         
-    constructor(position:Vector2, width:number, height:number, text:string, size:number, r:number, g:number, b:number, low:number, high:number, duration:number)
+    constructor(position:Vector2, width:number, height:number, text:string, size:number, color:Color, low:number, high:number, duration:number)
     {
-        super(position, width, height, text, size, r, g, b);
+        super(position, width, height, text, size, color);
         this.lowAlpha = low;
         this.highAlpha = high;
         this.duration = duration;
@@ -23,19 +23,19 @@ class FadeText extends TextObject
     {   
         if(!this.revert)
         {
-            if(this.color[3] > this.lowAlpha)
-                this.color[3] -= this.duration / Game.MS_UPDATE_LAG;
+            if(this.color.a > this.lowAlpha)
+                this.color.a -= this.duration / Game.MS_UPDATE_LAG;
             else
                 this.revert = true;
         }
         else
         {
-            if(this.color[3] <= this.highAlpha)
-                this.color[3] += this.duration / Game.MS_UPDATE_LAG;
+            if(this.color.a <= this.highAlpha)
+                this.color.a += this.duration / Game.MS_UPDATE_LAG;
             else
                 this.revert = false;
         }
-        this.cacheColorString();
+        this.color.cacheColorString();
         super.draw(ctx);
     }
 }

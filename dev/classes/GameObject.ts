@@ -1,7 +1,5 @@
-
 class GameObject
 {
-    public rnd:number;
     public position:Vector2;
     public direction:Vector2;
     public velocity:Vector2;
@@ -31,16 +29,6 @@ class GameObject
         this.oldPosition = position;
         this.hasGravity = hasGravity;
         this.canMove = canMove;
-        this.rnd = Math.random();
-
-        /*this.position.x = (this.position.x - (this.width / 2));
-        this.position.y = (this.position.y - (this.height / 2));
-        
-        if(this.position.x < 0)
-            this.position.x = 0;
-            
-        if(this.position.y < 0)
-            this.position.y = 0;*/
         
         this.needsInput = needsInput;
         this.hasCollider = collider;

@@ -79,6 +79,10 @@ class Knightsalot extends SpriteObject
                     break;
                 }
             break;
+            case E_COLLIDER_TYPES.TRIGGER:
+            {
+                (<Trigger>(co.object)).activate();
+            }
             case E_COLLIDER_TYPES.PLAYER:
                 if(ColliderDirection.BOTTOM)
                 {

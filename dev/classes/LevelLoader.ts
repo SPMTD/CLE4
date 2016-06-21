@@ -11,7 +11,7 @@ class LevelLoader
     private tilesetWidth:number;
     private levelToDraw:boolean = false;
 
-    public load(name:string, cb : (arr:Array<GameObject>) => any)
+    public load(scene:Scene, name:string, cb : (arr:Array<GameObject>) => any)
     {
         console.log("Loading: " + name);
         let goList = [];
@@ -51,9 +51,17 @@ class LevelLoader
             
             let collisionData = data.layers[layer].objects;
 
-            for(let i = 0; i < collisionData.length; i++)
+            for(let c of collisionData)
             {
-                goList.push(new GameObject(new Vector2(collisionData[i].x, collisionData[i].y), collisionData[i].width, collisionData[i].height, false, true, false, false, Game.colliderStringToType(collisionData[i].type)));
+                if(c.type == "trigger")
+                {
+                    console.log('test');
+                    goList.push(new Trigger(new Vector2(c.x, c.y), c.width, c.height, c.name, scene));
+                }
+                else
+                {
+                    goList.push(new GameObject(new Vector2(c.x, c.y), c.width, c.height, false, true, false, false, Game.colliderStringToType(c.type)));
+                }
             }
                    
             console.log(name + " loaded");
