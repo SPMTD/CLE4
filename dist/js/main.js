@@ -125,6 +125,7 @@ class GameObject {
         this.gravity = false;
         this.grounded = false;
         this.canMove = false;
+        this.name = "";
         this.width = width;
         this.height = height;
         this.position = position;
@@ -191,11 +192,12 @@ class GameObject {
 }
 class LiftObject extends GameObject {
     constructor(position, width, height, collider = true) {
-        super(position, width, height, false, collider, false, true);
+        super(position, width, height, false, collider, false, true, E_COLLIDER_TYPES.LIFT);
+        this.name = "Lift";
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/wall.png';
         this.active = false;
-        this.targetY = 50;
+        this.targetY = 75;
         this.startY = 390;
         this.speed = 5;
         this.up = true;
@@ -256,8 +258,8 @@ class Trigger extends GameObject {
         this.triggerName = name;
         this.scene = scene;
     }
-    activate() {
-        this.scene.triggerActivated(this.triggerName);
+    activate(go) {
+        this.scene.triggerActivated(go, this.triggerName);
     }
 }
 class Scene {
@@ -315,7 +317,7 @@ class Scene {
             }
         }
     }
-    triggerActivated(name) {
+    triggerActivated(go, name) {
     }
 }
 class GameOverScene extends Scene {
@@ -335,19 +337,9 @@ class GameOverScene extends Scene {
         super.draw(ctx);
     }
 }
-/// <reference path="classes/game.ts" />
-/// <reference path="classes/GameObject.ts" />
-/// <reference path="classes/LiftObject.ts" />
-/// <reference path="classes/BridgeObject.ts" />
-/// <reference path="classes/Trigger.ts" />
-/// <reference path="classes/Scene.ts" />
-/// <reference path="classes/scenes/GameOverScene.ts" />
 window.addEventListener("load", function () {
     new Game();
 });
-/**
- * BoxCollider
- */
 class BoxCollider {
     constructor(x, y, w, h, type, offset = Vector2.zero) {
         this.x = x;
@@ -481,7 +473,6 @@ class Wall extends GameObject {
         ctx.drawImage(this.sprite, this.position.x, this.position.y, this.width, this.height);
     }
 }
-/// <reference path="Wall.ts" />
 class SpriteObject extends GameObject {
     constructor(position, width, height, frameWidth, frameHeight, img, needsInput = false, collider = false, hasGravity = false, canMove = false, type = E_COLLIDER_TYPES.PROP) {
         super(position, width, height, needsInput, collider, hasGravity, canMove, type);
@@ -588,6 +579,7 @@ class Knightsalot extends SpriteObject {
         this.jumpSpeed = 0;
         this.maxJumpHeight = 75;
         this.jumpHeight = 0;
+        this.name = "Knightsalot";
         this.speed = 0.9;
         this.maxHorSpeed = 5;
         this.drag = 0.3;
@@ -646,7 +638,7 @@ class Knightsalot extends SpriteObject {
                 break;
             case E_COLLIDER_TYPES.TRIGGER:
                 {
-                    (co.object).activate();
+                    (co.object).activate(this);
                 }
             case E_COLLIDER_TYPES.PLAYER:
                 if (ColliderDirection.BOTTOM) {
@@ -699,6 +691,7 @@ class Puss extends SpriteObject {
         this.jumpSpeed = 0;
         this.maxJumpHeight = 0;
         this.jumpHeight = 0;
+        this.name = "Puss";
         this.speed = 2;
         this.maxHorSpeed = 10;
         this.maxJumpHeight = 10;
@@ -759,7 +752,7 @@ class Puss extends SpriteObject {
                 break;
             case E_COLLIDER_TYPES.TRIGGER:
                 {
-                    (co.object).activate();
+                    (co.object).activate(this);
                 }
             case E_COLLIDER_TYPES.PLAYER:
                 if (ColliderDirection.BOTTOM) {
@@ -810,20 +803,20 @@ class Level1Scene extends Scene {
         this.gameObjects.push(new Knightsalot(new Vector2(64, Game.height - 150), 50, 50, 0.75));
         this.gameObjects.push(new Puss(new Vector2(96, Game.height - 150), 35, 35, 0.75));
         this.lift = new LiftObject(new Vector2(128, 390), 100, 25);
-        this.bridge = new BridgeObject(new Vector2(525, 70), 160, 25, 400, 5);
+        this.bridge = new BridgeObject(new Vector2(525, 100), 160, 25, 400, 5);
         this.gate = new BridgeObject(new Vector2(Game.width - 25, 300), 25, 200, 450, 5);
         this.gameObjects.push(this.lift);
         this.gameObjects.push(this.bridge);
         this.gameObjects.push(this.gate);
         this.level = new LevelLoader();
-        this.level.load(this, "test3", (arr) => {
+        this.level.load(this, "test4", (arr) => {
             for (let i = 0; i < arr.length; i++) {
                 this.gameObjects.push(arr[i]);
             }
             super.processGameObjects();
         });
     }
-    triggerActivated(name) {
+    triggerActivated(go, name) {
         switch (name) {
             case "liftButton":
                 this.lift.activate();
@@ -838,7 +831,12 @@ class Level1Scene extends Scene {
                 this.game.activateScene(E_SCENES.LEVEL1_SCENE);
                 break;
             case "success":
-                this.game.activateScene(E_SCENES.GAME_OVER_SCENE);
+                if (go.name == "Knightsalot")
+                    this.character1Complete = true;
+                else if (go.name == "Puss")
+                    this.character2Complete = true;
+                if (this.character1Complete && this.character2Complete)
+                    this.game.activateScene(E_SCENES.GAME_OVER_SCENE);
                 break;
         }
     }

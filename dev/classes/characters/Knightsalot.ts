@@ -5,6 +5,7 @@ class Knightsalot extends SpriteObject
     private jumpSpeed:number = 0;
     private maxJumpHeight:number = 75;
     private jumpHeight:number = 0;
+    public name:string = "Knightsalot";
     
     constructor(position:Vector2, width:number, height:number, speed:number) 
     {
@@ -68,20 +69,20 @@ class Knightsalot extends SpriteObject
                         this.grounded = true;   
                         this.position.y = co.object.position.y - this.collider.height;
                     break;
-                        case ColliderDirection.TOP:
+                    case ColliderDirection.TOP:
                         this.position.y = co.object.position.y + co.object.collider.height;
                     break;
-                        case ColliderDirection.RIGHT:
+                    case ColliderDirection.RIGHT:
                         this.position.x = co.object.position.x - (this.collider.width + 10);
                     break;
-                        case ColliderDirection.LEFT:
+                    case ColliderDirection.LEFT:
                         this.position.x = co.object.position.x + (co.object.collider.width - 10);
                     break;
                 }
             break;
             case E_COLLIDER_TYPES.TRIGGER:
             {
-                (<Trigger>(co.object)).activate();
+                (<Trigger>(co.object)).activate(this);
             }
             case E_COLLIDER_TYPES.PLAYER:
                 if(ColliderDirection.BOTTOM)

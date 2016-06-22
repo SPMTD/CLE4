@@ -4,6 +4,8 @@ class Level1Scene extends Scene
     private lift:LiftObject;
     private bridge:BridgeObject;
     private gate:BridgeObject;
+    private character1Complete:Boolean;
+    private character2Complete:Boolean;
     
     public init() : void
     {
@@ -13,7 +15,7 @@ class Level1Scene extends Scene
         this.gameObjects.push(new Puss(new Vector2(96, Game.height - 150), 35, 35, 0.75));
 
         this.lift = new LiftObject(new Vector2(128, 390), 100, 25);
-        this.bridge = new BridgeObject(new Vector2(525, 70), 160, 25, 400, 5);
+        this.bridge = new BridgeObject(new Vector2(525, 100), 160, 25, 400, 5);
         this.gate = new BridgeObject(new Vector2(Game.width - 25, 300), 25, 200, 450, 5);
 
         this.gameObjects.push(this.lift);
@@ -22,7 +24,7 @@ class Level1Scene extends Scene
         
         // Load level.
         this.level = new LevelLoader();       
-        this.level.load(this, "test3", (arr : Array<GameObject>) => 
+        this.level.load(this, "test4", (arr : Array<GameObject>) => 
         {
             for(let i = 0; i < arr.length; i++)
             {
@@ -33,7 +35,7 @@ class Level1Scene extends Scene
         });
     }
 
-    public triggerActivated(name:string) : void
+    public triggerActivated(go:GameObject, name:string) : void
     {
         switch(name)
         {
@@ -50,7 +52,13 @@ class Level1Scene extends Scene
                 this.game.activateScene(E_SCENES.LEVEL1_SCENE);
             break;
             case "success":
-                this.game.activateScene(E_SCENES.GAME_OVER_SCENE);
+                if(go.name == "Knightsalot")
+                    this.character1Complete = true;
+                else if(go.name == "Puss")
+                    this.character2Complete = true;
+
+                if(this.character1Complete && this.character2Complete)        
+                    this.game.activateScene(E_SCENES.GAME_OVER_SCENE);
             break;
         }
     }

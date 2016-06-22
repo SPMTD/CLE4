@@ -5,13 +5,14 @@ class LiftObject extends GameObject {
     public targetY:number;
     public startY:number;
     private up:boolean;
+    public name:string = "Lift";
     
     constructor(position: Vector2, width:number, height:number, collider:Boolean = true) {
-        super(position, width, height, false, collider, false, true);
+        super(position, width, height, false, collider, false, true, E_COLLIDER_TYPES.LIFT);
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/wall.png';        
         this.active = false;
-        this.targetY = 50;
+        this.targetY = 75;
         this.startY = 390;
         this.speed = 5;
         this.up = true;

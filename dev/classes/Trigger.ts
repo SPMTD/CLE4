@@ -11,8 +11,8 @@ class Trigger extends GameObject
         this.scene = scene;
     }
 
-    public activate()
+    public activate(go:GameObject)
     {
-        this.scene.triggerActivated(this.triggerName);
+        this.scene.triggerActivated(go, this.triggerName);
     }
 }

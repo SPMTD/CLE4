@@ -20,6 +20,7 @@ class GameObject
     protected gravity:Boolean = false;
     public grounded:Boolean = false;
     public canMove:Boolean = false;
+    public name:string = "";
     
     constructor(position:Vector2, width:number, height:number, needsInput:Boolean = false, collider:Boolean = false, hasGravity:Boolean = false, canMove:Boolean = false, type:E_COLLIDER_TYPES = E_COLLIDER_TYPES.PROP)
     {

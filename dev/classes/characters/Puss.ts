@@ -5,6 +5,7 @@ class Puss extends SpriteObject
     private jumpSpeed:number = 0;
     private maxJumpHeight:number = 0;
     private jumpHeight:number = 0;
+    public name:string = "Puss";
 
     constructor(position:Vector2, width:number, height:number, speed:number)
     {
@@ -83,7 +84,7 @@ class Puss extends SpriteObject
             break;
             case E_COLLIDER_TYPES.TRIGGER:
             {
-                (<Trigger>(co.object)).activate();
+                (<Trigger>(co.object)).activate(this);
             }
             case E_COLLIDER_TYPES.PLAYER:
                 if(ColliderDirection.BOTTOM)

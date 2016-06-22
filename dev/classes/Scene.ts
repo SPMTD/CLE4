@@ -89,7 +89,7 @@ class Scene
         }
     }
     
-    public triggerActivated(name:string) : void
+    public triggerActivated(go:GameObject, name:string) : void
     {
     }
 }
