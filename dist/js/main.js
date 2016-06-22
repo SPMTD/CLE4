@@ -192,7 +192,7 @@ class GameObject {
 }
 class LiftObject extends GameObject {
     constructor(position, width, height, collider = true) {
-        super(position, width, height, false, collider, false, true, E_COLLIDER_TYPES.LIFT);
+        super(position, width, height, false, collider, false, true);
         this.name = "Lift";
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/wall.png';

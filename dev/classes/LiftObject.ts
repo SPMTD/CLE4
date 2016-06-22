@@ -8,7 +8,7 @@ class LiftObject extends GameObject {
     public name:string = "Lift";
     
     constructor(position: Vector2, width:number, height:number, collider:Boolean = true) {
-        super(position, width, height, false, collider, false, true, E_COLLIDER_TYPES.LIFT);
+        super(position, width, height, false, collider, false, true);
         this.sprite = new Image(this.width, this.height);
         this.sprite.src = 'images/wall.png';        
         this.active = false;
